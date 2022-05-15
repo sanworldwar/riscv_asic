@@ -21,9 +21,9 @@ module idu (
 
 );
 
-    wire    [`REG_ADDR_BUS] rs1 = inst_i[19:15];
-    wire    [`REG_ADDR_BUS] rs2 = inst_i[24:20];
-    wire    [`REG_ADDR_BUS] rd = inst_i[11:7];
+    wire    [`REG_ADDR_BUS] rs1_addr = inst_i[19:15];
+    wire    [`REG_ADDR_BUS] rs2_addr = inst_i[24:20];
+    wire    [`REG_ADDR_BUS] rd_addr = inst_i[11:7];
 
     wire    [4:0]   opcode_6_2 = inst_i[6:2];
     wire    [2:0]   funct3 = inst_i[14:12];
@@ -38,11 +38,11 @@ module idu (
     wire    inst_or = opcode_6_2_01100 & funct3_110 & funct7_0000000;
 
     assign pc_o = pc_i;
-    assign rs1_addr_o = rs1;
+    assign rs1_addr_o = rs1_addr;
     assign rs1_data_o = rs1_data_i;
-    assign rs2_addr_o = rs2;
+    assign rs2_addr_o = rs2_addr;
     assign rs2_data_o = rs2_data_i;
-    assign rd_addr_o = rd;
+    assign rd_addr_o = rd_addr;
     assign rd_we_o = inst_or;
 
 

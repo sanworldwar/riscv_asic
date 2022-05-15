@@ -12,7 +12,7 @@ module dff_lr #(
 );
 
     reg    [DATA_WIDTH-1:0]    data_out_r;
-    always @(negedge clk or negedge rst_n) begin
+    always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             data_out_r <= {DATA_WIDTH{1'b0}};
         end else if (load) begin

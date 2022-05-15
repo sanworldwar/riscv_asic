@@ -37,3 +37,4 @@
 `define REG_BUS             `REG_BUS_WIDTH-1:0      //regfile数据总线
 `define REG_ADDR_BUS_WIDTH  5                       //regfile地址总线宽度
 `define REG_ADDR_BUS        `REG_ADDR_BUS_WIDTH-1:0 //regfile地址总线
+`define REG_NUM             32                      //regfile数目

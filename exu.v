@@ -16,18 +16,22 @@ module exu (
 
 );
 
-reg [`REG_BUS]  reg_rd_data;
+    reg [`REG_BUS]  reg_rd_data;
 
-always @(*) begin
-    case (dec_info_bus_i)
-        1'b1: begin
-            reg_rd_data = rs1_data_i | rs2_data_i;
-        end 
-        default: begin
-            reg_rd_data = `REG_BUS_WIDTH'h0;
-        end
-    endcase
-end
+    always @(*) begin
+        case (dec_info_bus_i)
+            1'b1: begin
+                reg_rd_data = rs1_data_i | rs2_data_i;
+            end 
+            default: begin
+                reg_rd_data = `REG_BUS_WIDTH'h0;
+            end
+        endcase
+    end
+
+    assign rd_data_o = reg_rd_data;
+    assign rd_we_o = rd_we_i;
+    assign rd_addr_o = rd_addr_i;
 
     
 endmodule

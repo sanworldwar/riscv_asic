@@ -14,7 +14,7 @@ module regfile (
     input   wire    [`REG_BUS]      wdata_i     
 );
 
-    reg [`REG_BUS]  gpr_regs [`REG_ADDR_BUS]  ;
+    reg [`REG_BUS_WIDTH-1:0]  gpr_regs [0:`REG_NUM-1]  ;
 
     always @(posedge clk) begin
         if (we_i) begin
@@ -22,9 +22,9 @@ module regfile (
         end
     end
     
-    assign rdata1 = (raddr1_i == `REG_ADDR_BUS_WIDTH'h0) ? `ZERO_WORD : 
+    assign rdata1_o = (raddr1_i == `REG_ADDR_BUS_WIDTH'h0) ? `ZERO_WORD : 
                     ((raddr1_i == waddr_i) ? wdata_i : gpr_regs[raddr1_i]);    
-    assign rdata1 = (raddr2_i == `REG_ADDR_BUS_WIDTH'h0) ? `ZERO_WORD : 
+    assign rdata2_o = (raddr2_i == `REG_ADDR_BUS_WIDTH'h0) ? `ZERO_WORD : 
                     ((raddr2_i == waddr_i) ? wdata_i : gpr_regs[raddr2_i]);    
    
    
