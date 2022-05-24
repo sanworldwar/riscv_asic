@@ -21,42 +21,44 @@ module openriscv (
     
     //连接idu和id_ex的信号
     wire    [31:0]          id_pc_o             ;
-    wire    [`REG_BUS]      id_rs1_data_o       ;
-    wire    [`REG_BUS]      id_rs2_data_o       ;
+    wire    [`REG_BUS]      id_op1_data_o       ;
+    wire    [`REG_BUS]      id_op2_data_o       ;
     wire    [`REG_ADDR_BUS] id_rd_addr_o        ;
     wire                    id_rd_we_o          ;
     wire    [`DEC_INFO_BUS] id_dec_info_bus_o   ;
 
     //连接idu和regfile的信号
     wire    [`REG_ADDR_BUS] id_rs1_addr_o   ;
+    wire                    id_rs1_re_o     ;
     wire    [`REG_BUS]      id_rs1_data_i   ;
     wire    [`REG_ADDR_BUS] id_rs2_addr_o   ;
+    wire                    id_rs2_re_o     ;
     wire    [`REG_BUS]      id_rs2_data_i   ;
 
     //连接id_ex和exu的信号
     wire    [31:0]          ex_pc_i             ;
-    wire    [`REG_BUS]      ex_rs1_data_i       ;
-    wire    [`REG_BUS]      ex_rs2_data_i       ;
+    wire    [`REG_BUS]      ex_op1_data_i       ;
+    wire    [`REG_BUS]      ex_op2_data_i       ;
     wire    [`REG_ADDR_BUS] ex_rd_addr_i        ;
     wire                    ex_rd_we_i          ;
     wire    [`DEC_INFO_BUS] ex_dec_info_bus_i   ;
 
-    //连接exu和ex_mem的信号
+    //连接exu和ex_ls和idu的信号
     wire                    ex_rd_we_o      ;
     wire    [`REG_BUS]      ex_rd_data_o    ;
     wire    [`REG_ADDR_BUS] ex_rd_addr_o    ;
 
-    //连接ex_mem和mem的信号
-    wire                    mem_rd_we_i     ;
-    wire    [`REG_BUS]      mem_rd_data_i   ;
-    wire    [`REG_ADDR_BUS] mem_rd_addr_i   ;
+    //连接ex_ls和lsu的信号
+    wire                    ls_rd_we_i     ;
+    wire    [`REG_BUS]      ls_rd_data_i   ;
+    wire    [`REG_ADDR_BUS] ls_rd_addr_i   ;
 
-    //连接mem和mem_wb的信号
-    wire                    mem_rd_we_o     ;
-    wire    [`REG_BUS]      mem_rd_data_o   ;
-    wire    [`REG_ADDR_BUS] mem_rd_addr_o   ;    
+    //连接lsu和ls_wb和idu的信号
+    wire                    ls_rd_we_o     ;
+    wire    [`REG_BUS]      ls_rd_data_o   ;
+    wire    [`REG_ADDR_BUS] ls_rd_addr_o   ;    
 
-    //连接mem_wb和写回的信号
+    //连接ls_wb和wb的信号
     wire                    wb_rd_we_i      ;
     wire    [`REG_BUS]      wb_rd_data_i    ;
     wire    [`REG_ADDR_BUS] wb_rd_addr_i    ;  
@@ -90,15 +92,26 @@ module openriscv (
 
         .rs1_data_i(id_rs1_data_i),
         .rs1_addr_o(id_rs1_addr_o),
+        .rs1_re_o(id_rs1_re_o),
         .rs2_data_i(id_rs2_data_i),
         .rs2_addr_o(id_rs2_addr_o),
+        .rs2_re_o(id_rs2_re_o),
 
         .pc_o(id_pc_o),
-        .rs1_data_o(id_rs1_data_o),
-        .rs2_data_o(id_rs2_data_o),
+        .op1_data_o(id_op1_data_o),
+        .op2_data_o(id_op2_data_o),
         .rd_addr_o(id_rd_addr_o),
         .rd_we_o(id_rd_we_o),
-        .dec_info_bus_o(id_dec_info_bus_o)
+        .dec_info_bus_o(id_dec_info_bus_o),
+
+
+        .ex_rd_we_i(ex_rd_we_o),
+        .ex_rd_addr_i(ex_rd_addr_o),
+        .ex_rd_data_i(ex_rd_data_o),
+
+        .ls_rd_we_i(ls_rd_we_o),
+        .ls_rd_addr_i(ls_rd_addr_o),
+        .ls_rd_data_i(ls_rd_data_o)
     );
 
     id_ex u_id_ex(
@@ -106,15 +119,15 @@ module openriscv (
         .rst_n(rst_n),
 
         .pc_i(id_pc_o),
-        .rs1_data_i(id_rs1_data_o),
-        .rs2_data_i(id_rs2_data_o),
+        .op1_data_i(id_op1_data_o),
+        .op2_data_i(id_op2_data_o),
         .rd_addr_i(id_rd_addr_o),
         .rd_we_i(id_rd_we_o),
         .dec_info_bus_i(id_dec_info_bus_o),
 
         .pc_o(ex_pc_i),
-        .rs1_data_o(ex_rs1_data_i),
-        .rs2_data_o(ex_rs2_data_i),
+        .op1_data_o(ex_op1_data_i),
+        .op2_data_o(ex_op2_data_i),
         .rd_addr_o(ex_rd_addr_i),
         .rd_we_o(ex_rd_we_i),
         .dec_info_bus_o(ex_dec_info_bus_i)
@@ -122,8 +135,8 @@ module openriscv (
 
     exu u_exu(
         .pc_i(ex_pc_i),
-        .rs1_data_i(ex_rs1_data_i),
-        .rs2_data_i(ex_rs2_data_i),
+        .op1_data_i(ex_op1_data_i),
+        .op2_data_i(ex_op2_data_i),
         .rd_addr_i(ex_rd_addr_i),
         .rd_we_i(ex_rd_we_i),
         .dec_info_bus_i(ex_dec_info_bus_i),
@@ -133,7 +146,7 @@ module openriscv (
         .rd_addr_o(ex_rd_addr_o)
     );
 
-    ex_mem u_ex_mem(
+    ex_ls u_ex_ls(
         .clk(clk),
         .rst_n(rst_n),
 
@@ -141,28 +154,28 @@ module openriscv (
         .rd_data_i(ex_rd_data_o),
         .rd_addr_i(ex_rd_addr_o),
 
-        .rd_we_o(mem_rd_we_i),
-        .rd_data_o(mem_rd_data_i),
-        .rd_addr_o(mem_rd_addr_i)                        
+        .rd_we_o(ls_rd_we_i),
+        .rd_data_o(ls_rd_data_i),
+        .rd_addr_o(ls_rd_addr_i)                        
     );
 
-    mem u_mem(
-        .rd_we_i(mem_rd_we_i),
-        .rd_data_i(mem_rd_data_i),
-        .rd_addr_i(mem_rd_addr_i),
+    lsu u_lsu(
+        .rd_we_i(ls_rd_we_i),
+        .rd_data_i(ls_rd_data_i),
+        .rd_addr_i(ls_rd_addr_i),
 
-        .rd_we_o(mem_rd_we_o),
-        .rd_data_o(mem_rd_data_o),
-        .rd_addr_o(mem_rd_addr_o)          
+        .rd_we_o(ls_rd_we_o),
+        .rd_data_o(ls_rd_data_o),
+        .rd_addr_o(ls_rd_addr_o)          
     );
 
-    mem_wb u_mem_wb(
+    ls_wb u_ls_wb(
         .clk(clk),
         .rst_n(rst_n),
 
-        .rd_we_i(mem_rd_we_o),
-        .rd_data_i(mem_rd_data_o),
-        .rd_addr_i(mem_rd_addr_o),
+        .rd_we_i(ls_rd_we_o),
+        .rd_data_i(ls_rd_data_o),
+        .rd_addr_i(ls_rd_addr_o),
 
         .rd_we_o(wb_rd_we_i),
         .rd_data_o(wb_rd_data_i),
@@ -175,8 +188,10 @@ module openriscv (
         .rst_n(rst_n),
 
         .raddr1_i(id_rs1_addr_o),
+        .re1_i(id_rs1_re_o),
         .rdata1_o(id_rs1_data_i),
         .raddr2_i(id_rs2_addr_o),
+        .re2_i(id_rs2_re_o),
         .rdata2_o(id_rs2_data_i),
 
         .waddr_i(wb_rd_addr_i),

@@ -1,15 +1,15 @@
 `include "defines.v"
 
-module ex_mem (
+module ls_wb (
     input   wire    clk     ,
     input   wire    rst_n   ,
 
-    //from ex
+    //from lsu
     input   wire                    rd_we_i     ,
     input   wire    [`REG_BUS]      rd_data_i   ,
     input   wire    [`REG_ADDR_BUS] rd_addr_i   ,
 
-    //to mem
+    //to regfile
     output  wire                    rd_we_o     ,
     output  wire    [`REG_BUS]      rd_data_o   ,
     output  wire    [`REG_ADDR_BUS] rd_addr_o       
@@ -31,3 +31,4 @@ module ex_mem (
     assign rd_addr_o = rd_addr_r;
 
 endmodule
+
