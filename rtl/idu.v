@@ -118,6 +118,8 @@ module idu (
 
     wire    [`REG_BUS]  imm = {`REG_BUS_WIDTH{inst_i_op}} & {{`REG_BUS_WIDTH-12{inst_i[31]}}, inst_i[31:20]}; //立即数
 
+    //U instruction
+
     assign pc_o = pc_i;
     
     wire    [`REG_BUS]  rs1_data = (rs1_addr == `REG_ADDR_BUS_WIDTH'h0) ? rs1_data_i   : //数据前移
