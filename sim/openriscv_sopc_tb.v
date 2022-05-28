@@ -17,6 +17,10 @@ module openriscv_sopc_tb ();
         $readmemh("regs.data", u_openrisc_sopc.u_openriscv.u_regfile.gpr_regs);
     end
 
+    initial begin
+        $readmemh("data_ram.data", u_openrisc_sopc.u_data_ram.data_mem);
+    end
+
 
     initial begin
         clk = 1'b0;

@@ -3,35 +3,26 @@
 module if_id (
     input   wire            clk      ,
     input   wire            rst_n    ,
+    
+    input   wire    [`REG_BUS]  pc_i     ,
+    input   wire    [31:0]      inst_i   ,
 
-    input   wire    [31:0]  pc_i     ,
-    input   wire    [31:0]  inst_i   ,
+    output  wire    [`REG_BUS]  pc_o     ,
+    output  wire    [31:0]      inst_o   ,
 
-    output  wire    [31:0]  pc_o     ,
-    output  wire    [31:0]  inst_o   
+    //from ctrl
+    input   wire    [5:0]       stall_i   
 );
 
-    reg [31:0]  pc_r     ;
-    reg [31:0]  inst_r   ;
+    wire    clr = stall_i[1] & !stall_i[2]; //取指暂停，而译码继续
+    wire    load = !stall_i[1];
 
-    always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-            pc_r <= `CPU_RESET_ADDR;
-        end else begin
-            pc_r <= pc_i;
-        end
-    end
-
-    assign  pc_o = pc_r;
+    wire    [`REG_BUS]  pc_r;
+    dff_lrc #(`REG_BUS_WIDTH) dff_pc(clk, rst_n, clr, load, pc_i, pc_r);
+    assign pc_o = pc_r;
     
-    always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-            inst_r <= `ZERO_WORD;
-        end else begin
-            inst_r <= inst_i;
-        end
-    end
-
-    assign  inst_o = inst_r;
+    wire    [31:0]  inst_r;
+    dff_lrc #(32) dff_inst(clk, rst_n, clr, load, inst_i, inst_r);
+    assign inst_o = inst_r;
 
 endmodule

@@ -13,7 +13,7 @@ CFLAG = -march=rv32i -mabi=ilp32
 
 export CROSS_COMPILE
 
-all: inst_rom.data
+all:  inst_rom.data inst_rom.objdump
 
 %.o: %.S
 	$(CC) $(CFLAG) $< -o $@
@@ -27,8 +27,17 @@ inst_rom.bin: inst_rom.om
 inst_rom.data: inst_rom.bin
 	python bin2data.py $<
 
+inst_rom.objdump: $(OBJECTS)
+	$(OBJDUMP) -d $< > $@
+
+sim:
+	iverilog -s openriscv_sopc_tb -o out.vvp -I ../rtl/ ../rtl/*.v ./*.v
+	vvp out.vvp 
+	gtkwave openriscv_sopc_tb.vcd 
+
+
 .PHONY: clean
 
 clean:
-	rm -f *.o *.om *.bin *.data
+	rm -f *.o *.om *.bin inst*.data
 
