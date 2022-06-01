@@ -21,11 +21,16 @@ module idu (
     output  wire    [`REG_ADDR_BUS] rd_addr_o       ,
     output  wire                    rd_we_o         ,
     output  wire    [`DEC_INFO_BUS] dec_info_bus_o  ,
+    output  wire    [`CSR_ADDR_BUS] csr_waddr_o     ,
+    output  wire                    csr_we_o        ,
 
     //from exu
-    input   wire                    ex_rd_we_i   ,
-    input   wire    [`REG_BUS]      ex_rd_data_i ,
-    input   wire    [`REG_ADDR_BUS] ex_rd_addr_i ,
+    input   wire                    ex_rd_we_i      ,
+    input   wire    [`REG_BUS]      ex_rd_data_i    ,
+    input   wire    [`REG_ADDR_BUS] ex_rd_addr_i    ,
+    input   wire                    ex_csr_we_i     ,
+    input   wire    [`REG_BUS]      ex_csr_wdata_i  ,
+    input   wire    [`CSR_ADDR_BUS] ex_csr_waddr_i  ,
 
     //from lsu
     input   wire                    ls_rd_we_i      ,
@@ -37,12 +42,18 @@ module idu (
 
     //to ifu
     output  wire                    jump_req_o      ,
-    output  wire    [`REG_BUS]      jump_pc_o       
+    output  wire    [`REG_BUS]      jump_pc_o       ,
+
+    //to csr
+    input   wire    [`REG_BUS]      csr_rdata_i     ,
+    output  wire    [`CSR_ADDR_BUS] csr_raddr_o     ,
+    output  wire                    csr_re_o              
 );
 
     wire    [`REG_ADDR_BUS] rs1_addr = inst_i[19:15];
     wire    [`REG_ADDR_BUS] rs2_addr = inst_i[24:20];
     wire    [`REG_ADDR_BUS] rd_addr = inst_i[11:7];
+    wire    [`CSR_ADDR_BUS] csr_addr = inst_i[31:20];
 
     wire    [1:0]   opcode_1_0 = inst_i[1:0];
     wire    [4:0]   opcode_6_2 = inst_i[6:2];
@@ -75,6 +86,8 @@ module idu (
     wire    opcode_6_2_11011 = opcode_6_2 == 5'b11011; //jal指令
     wire    opcode_6_2_11001 = opcode_6_2 == 5'b11001; //jal指令
     wire    opcode_6_2_11000 = opcode_6_2 == 5'b11000; //b(ranch)指令
+    wire    opcode_6_2_00011 = opcode_6_2 == 5'b00011; //fence指令
+    wire    opcode_6_2_11100 = opcode_6_2 == 5'b11100; //system指令
 
     //R instruction
     wire    inst_r_add = funct7_0000000 & funct3_000 & opcode_6_2_01100 & opcode_1_0_11;
@@ -193,38 +206,78 @@ module idu (
     wire    inst_b_op = inst_b_beq | inst_b_bne  | inst_b_blt | 
                         inst_b_bge | inst_b_bltu | inst_b_bgeu;
 
+    //fence: nop
+    wire    inst_fence = funct3_000 & opcode_6_2_00011 & opcode_1_0_11;
+
+    //SYSTEM instruction no use
+    wire    inst_sys_ecall = inst_i[31:20] == 12'b0000_0000_0000 & funct3_000 & opcode_6_2_11100 & opcode_1_0_11;
+    wire    inst_sys_ebreak = inst_i[31:20] == 12'b0000_0000_0001 & funct3_000 & opcode_6_2_11100 & opcode_1_0_11;
+    
+    wire    inst_sys_op = inst_sys_ecall | inst_sys_ebreak;
+
+    //CONTROL STATE REGISTER instruction
+    wire    inst_csr_csrrw = funct3_001 & opcode_6_2_11100 & opcode_1_0_11;
+    wire    inst_csr_csrrs = funct3_010 & opcode_6_2_11100 & opcode_1_0_11;
+    wire    inst_csr_csrrc = funct3_011 & opcode_6_2_11100 & opcode_1_0_11;
+    wire    inst_csr_csrrwi = funct3_101 & opcode_6_2_11100 & opcode_1_0_11;
+    wire    inst_csr_csrrsi = funct3_110 & opcode_6_2_11100 & opcode_1_0_11;
+    wire    inst_csr_csrrci = funct3_111 & opcode_6_2_11100 & opcode_1_0_11;
+
+    wire    inst_csr_r_op = inst_csr_csrrw  | inst_csr_csrrs  | inst_csr_csrrc;
+    wire    inst_csr_i_op = inst_csr_csrrwi | inst_csr_csrrsi | inst_csr_csrrci;
+    wire    inst_csr_op = inst_csr_r_op | inst_csr_i_op;
+
+    wire    [`DEC_CSR_INFO_BUS]   dec_csr_info_bus;
+    assign dec_csr_info_bus[`DEC_INST_OP] = `DEC_INST_CSR;
+    assign dec_csr_info_bus[`DEC_INST_CSR_CSRRW] = inst_csr_csrrw;
+    assign dec_csr_info_bus[`DEC_INST_CSR_CSRRS] = inst_csr_csrrs;
+    assign dec_csr_info_bus[`DEC_INST_CSR_CSRRC] = inst_csr_csrrc;
+    assign dec_csr_info_bus[`DEC_INST_CSR_CSRRWI] = inst_csr_csrrwi;
+    assign dec_csr_info_bus[`DEC_INST_CSR_CSRRSI] = inst_csr_csrrsi;
+    assign dec_csr_info_bus[`DEC_INST_CSR_CSRRCI] = inst_csr_csrrci;
+
     wire    [`REG_BUS]  imm =  //立即数
-        ({`REG_BUS_WIDTH{inst_i_op}} & {{`REG_BUS_WIDTH-12{inst_i[31]}}, inst_i[31:20]}) | 
-        ({`REG_BUS_WIDTH{inst_u_op}} & {inst_i[31:12], {`REG_BUS_WIDTH-20{inst_i[31]}}}) |
-        ({`REG_BUS_WIDTH{inst_l_op}} & {{`REG_BUS_WIDTH-12{inst_i[31]}}, inst_i[31:20]}) |
-        ({`REG_BUS_WIDTH{inst_s_op}} & {{`REG_BUS_WIDTH-12{inst_i[31]}}, inst_i[31:25], inst_i[11:7]}) |
         ({`REG_BUS_WIDTH{inst_j_jal}} & {{`REG_BUS_WIDTH-20-1{inst_i[31]}}, inst_i[31], inst_i[19:12], inst_i[20], inst_i[30:21], 1'b0}) |
         ({`REG_BUS_WIDTH{inst_j_jalr}} & {{`REG_BUS_WIDTH-12{inst_i[31]}}, inst_i[31:20]}) |
-        ({`REG_BUS_WIDTH{inst_b_op}} & {{`REG_BUS_WIDTH-12-1{inst_i[31]}}, inst_i[31], inst_i[7], inst_i[30:25], inst_i[11:8], 1'b0}); 
+        ({`REG_BUS_WIDTH{inst_b_op}} & {{`REG_BUS_WIDTH-12-1{inst_i[31]}}, inst_i[31], inst_i[7], inst_i[30:25], inst_i[11:8], 1'b0});
 
     assign pc_o = pc_i;
     
     wire    [`REG_BUS]  rs1_data = (rs1_addr == `REG_ADDR_BUS_WIDTH'h0) ? rs1_data_i   : //数据前移
-                        ((rs1_addr == ex_rd_addr_i) && ex_rd_we_i)      ? ex_rd_data_i :
-                        ((rs1_addr == ls_rd_addr_i) && ls_rd_we_i)      ? ls_rd_data_i : 
+                        ((rs1_addr == ex_rd_addr_i) & ex_rd_we_i)       ? ex_rd_data_i :
+                        ((rs1_addr == ls_rd_addr_i) & ls_rd_we_i)       ? ls_rd_data_i : 
                         rs1_data_i;
     wire    [`REG_BUS]  rs2_data = (rs2_addr == `REG_ADDR_BUS_WIDTH'h0) ? rs2_data_i   : //数据前移
-                        ((rs2_addr == ex_rd_addr_i) && ex_rd_we_i)      ? ex_rd_data_i :
-                        ((rs2_addr == ls_rd_addr_i) && ls_rd_we_i)      ? ls_rd_data_i : 
+                        ((rs2_addr == ex_rd_addr_i) & ex_rd_we_i)       ? ex_rd_data_i :
+                        ((rs2_addr == ls_rd_addr_i) & ls_rd_we_i)       ? ls_rd_data_i : 
                         rs2_data_i;        
                  
     assign rs1_addr_o = rs1_addr;
-    assign rs1_re_o = inst_r_op | inst_i_op | inst_l_op | inst_s_op | inst_j_jalr |  inst_b_op;
+    assign rs1_re_o = inst_r_op | inst_i_op | inst_l_op | inst_s_op | inst_j_jalr |  inst_b_op | inst_csr_r_op;
 
     assign rs2_addr_o = rs2_addr;
     assign rs2_re_o = inst_r_op | inst_s_op | inst_b_op;
 
     assign rd_addr_o = rd_addr;
-    assign rd_we_o = inst_r_op | inst_i_op | inst_u_op | inst_j_op;
+    assign rd_we_o = inst_r_op | inst_i_op | inst_u_op | inst_j_op | inst_csr_op;
 
-    assign op1_data_o = {`REG_BUS_WIDTH{(inst_r_op | inst_i_op | inst_l_op | inst_s_op)}} & rs1_data;
-    assign op2_data_o = {`REG_BUS_WIDTH{inst_r_op | inst_s_op}} & rs2_data;
-    assign imm_data_o = {`REG_BUS_WIDTH{(inst_i_op | inst_u_op | inst_l_op | inst_s_op)}} & imm;
+    wire    [`REG_BUS]  csr_rdata = (csr_addr == ex_csr_waddr_i) ? ex_csr_wdata_i : csr_rdata_i;//数据前移
+
+    assign csr_raddr_o = csr_addr;
+    assign csr_re_o = inst_csr_op; 
+
+    assign csr_waddr_o = csr_addr;
+    assign csr_we_o = inst_csr_op; 
+
+    assign op1_data_o = {`REG_BUS_WIDTH{(inst_r_op | inst_i_op | inst_l_op | inst_s_op | inst_csr_r_op)}} & rs1_data;
+    assign op2_data_o = ({`REG_BUS_WIDTH{inst_r_op | inst_s_op}} & rs2_data) |
+                        ({`REG_BUS_WIDTH{inst_csr_op}} & csr_rdata);
+    assign imm_data_o = 
+        ({`REG_BUS_WIDTH{inst_i_op}} & {{`REG_BUS_WIDTH-12{inst_i[31]}}, inst_i[31:20]}) | 
+        ({`REG_BUS_WIDTH{inst_u_op}} & {inst_i[31:12], {`REG_BUS_WIDTH-20{inst_i[31]}}}) |
+        ({`REG_BUS_WIDTH{inst_l_op}} & {{`REG_BUS_WIDTH-12{inst_i[31]}}, inst_i[31:20]}) |
+        ({`REG_BUS_WIDTH{inst_s_op}} & {{`REG_BUS_WIDTH-12{inst_i[31]}}, inst_i[31:25], inst_i[11:7]}) |
+        ({`REG_BUS_WIDTH{inst_csr_i_op}} & {{`REG_BUS_WIDTH-5{1'b0}}, inst_i[19:15]});
 
     assign dec_info_bus_o = 
         ({`DEC_INFO_BUS_WIDTH{inst_r_op}} & {{`DEC_INFO_BUS_WIDTH-`DEC_R_INFO_BUS_WIDTH{1'b0}}, dec_r_info_bus}) |
@@ -232,7 +285,8 @@ module idu (
         ({`DEC_INFO_BUS_WIDTH{inst_u_op}} & {{`DEC_INFO_BUS_WIDTH-`DEC_U_INFO_BUS_WIDTH{1'b0}}, dec_u_info_bus}) |
         ({`DEC_INFO_BUS_WIDTH{inst_l_op}} & {{`DEC_INFO_BUS_WIDTH-`DEC_L_INFO_BUS_WIDTH{1'b0}}, dec_l_info_bus}) |
         ({`DEC_INFO_BUS_WIDTH{inst_s_op}} & {{`DEC_INFO_BUS_WIDTH-`DEC_S_INFO_BUS_WIDTH{1'b0}}, dec_s_info_bus}) |
-        ({`DEC_INFO_BUS_WIDTH{inst_j_op}} & {{`DEC_INFO_BUS_WIDTH-`DEC_J_INFO_BUS_WIDTH{1'b0}}, dec_j_info_bus});
+        ({`DEC_INFO_BUS_WIDTH{inst_j_op}} & {{`DEC_INFO_BUS_WIDTH-`DEC_J_INFO_BUS_WIDTH{1'b0}}, dec_j_info_bus}) |
+        ({`DEC_INFO_BUS_WIDTH{inst_csr_op}} & {{`DEC_INFO_BUS_WIDTH-`DEC_CSR_INFO_BUS_WIDTH{1'b0}}, dec_csr_info_bus});
    
     //停顿流水线 //load-store, load-use, alu-branch, load-branch 
     assign  stallreq_o = (rs1_addr != `REG_ADDR_BUS_WIDTH'h0) & (rs1_addr == ex_rd_addr_i) & rs1_re_o & !ex_rd_we_i |

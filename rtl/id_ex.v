@@ -12,6 +12,8 @@ module id_ex (
     input   wire    [`REG_ADDR_BUS] rd_addr_i       ,
     input   wire                    rd_we_i         ,
     input   wire    [`DEC_INFO_BUS] dec_info_bus_i  ,
+    input   wire    [`CSR_ADDR_BUS] csr_waddr_i     ,
+    input   wire                    csr_we_i        ,
 
     //to ex
     output  wire    [`REG_BUS]      pc_o            ,
@@ -21,6 +23,8 @@ module id_ex (
     output  wire    [`REG_ADDR_BUS] rd_addr_o       ,
     output  wire                    rd_we_o         ,
     output  wire    [`DEC_INFO_BUS] dec_info_bus_o  ,
+    output  wire    [`CSR_ADDR_BUS] csr_waddr_o     ,
+    output  wire                    csr_we_o        ,
 
     //to ctrl
     input   wire    [5:0]           stall_i              
@@ -57,5 +61,13 @@ module id_ex (
     wire    [`DEC_INFO_BUS] dec_info_bus_r;
     dff_lrc #(`DEC_INFO_BUS_WIDTH) dff_dec_info_bus(clk, rst_n, clr, load, dec_info_bus_i, dec_info_bus_r);
     assign dec_info_bus_o = dec_info_bus_r;   
+
+    wire    [`CSR_ADDR_BUS] csr_waddr_r;
+    dff_lrc #(`CSR_ADDR_BUS_WIDTH) dff_csr_waddr(clk, rst_n, clr, load, csr_waddr_i, csr_waddr_r);
+    assign csr_waddr_o = csr_waddr_r; 
+
+    wire    csr_we_r;
+    dff_lrc #(1) dff_csr_we(clk, rst_n, clr, load, csr_we_i, csr_we_r);
+    assign csr_we_o = csr_we_r; 
 
 endmodule

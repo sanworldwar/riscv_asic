@@ -21,7 +21,6 @@ module openriscv_sopc_tb ();
         $readmemh("data_ram.data", u_openrisc_sopc.u_data_ram.data_mem);
     end
 
-
     initial begin
         clk = 1'b0;
         rst_n = 1'b0;

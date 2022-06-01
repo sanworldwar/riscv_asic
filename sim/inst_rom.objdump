@@ -12,3 +12,7 @@ Disassembly of section .text:
 
 00000010 <EXIT>:
   10:	00410093          	addi	ra,sp,4
+  14:	34111073          	csrw	mepc,sp
+  18:	30515073          	csrwi	mtvec,2
+  1c:	3417e0f3          	csrrsi	ra,mepc,15
+  20:	341130f3          	csrrc	ra,mepc,sp

@@ -80,12 +80,24 @@
 `define DEC_S_INFO_BUS          `DEC_S_INFO_BUS_WIDTH-1:0  //S型指令译码信息
 
 //B(RANCH) and J(UMP) instruction decode bus
-`define DEC_INST_J             `DEC_INST_OP_WIDTH'd6      //J型指令
-`define DEC_INST_J_JAL         `DEC_INST_OP_WIDTH         //JAL指令
-`define DEC_INST_J_JALR        `DEC_INST_J_JAL+1 
+`define DEC_INST_J              `DEC_INST_OP_WIDTH'd6      //J型指令
+`define DEC_INST_J_JAL          `DEC_INST_OP_WIDTH         //JAL指令
+`define DEC_INST_J_JALR         `DEC_INST_J_JAL+1 
 
-`define DEC_J_INFO_BUS_WIDTH   `DEC_INST_J_JALR+1         //J型指令译码信息宽度
-`define DEC_J_INFO_BUS         `DEC_J_INFO_BUS_WIDTH-1:0  //J型指令译码信息
+`define DEC_J_INFO_BUS_WIDTH    `DEC_INST_J_JALR+1         //J型指令译码信息宽度
+`define DEC_J_INFO_BUS          `DEC_J_INFO_BUS_WIDTH-1:0  //J型指令译码信息
+
+//CONTROL STATE REGISTER instruction decode bus
+`define DEC_INST_CSR            `DEC_INST_OP_WIDTH'd7       //CSR型指令
+`define DEC_INST_CSR_CSRRW      `DEC_INST_OP_WIDTH
+`define DEC_INST_CSR_CSRRS      `DEC_INST_CSR_CSRRW+1    
+`define DEC_INST_CSR_CSRRC      `DEC_INST_CSR_CSRRS+1
+`define DEC_INST_CSR_CSRRWI     `DEC_INST_CSR_CSRRC+1
+`define DEC_INST_CSR_CSRRSI     `DEC_INST_CSR_CSRRWI+1
+`define DEC_INST_CSR_CSRRCI     `DEC_INST_CSR_CSRRSI+1
+
+`define DEC_CSR_INFO_BUS_WIDTH `DEC_INST_CSR_CSRRCI+1          //CSR型指令译码信息宽度
+`define DEC_CSR_INFO_BUS       `DEC_CSR_INFO_BUS_WIDTH-1:0 //CSR型指令译码信息
 
 //dec info bus
 `define DEC_INFO_BUS_WIDTH      `DEC_R_INFO_BUS_WIDTH       //选取最长宽度为DEC信息总线宽度
@@ -137,8 +149,24 @@
 //***********************
 //通用寄存器宏定义
 //***********************
-`define REG_BUS_WIDTH       32                      //regfile数据总线宽度
-`define REG_BUS             `REG_BUS_WIDTH-1:0      //regfile数据总线
-`define REG_ADDR_BUS_WIDTH  5                       //regfile地址总线宽度
-`define REG_ADDR_BUS        `REG_ADDR_BUS_WIDTH-1:0 //regfile地址总线
-`define REG_NUM             32                      //regfile数目
+`define REG_BUS_WIDTH        32                      //regfile数据总线宽度
+`define REG_BUS              `REG_BUS_WIDTH-1:0      //regfile数据总线
+`define REG_ADDR_BUS_WIDTH   5                       //regfile地址总线宽度
+`define REG_ADDR_BUS         `REG_ADDR_BUS_WIDTH-1:0 //regfile地址总线
+`define REG_NUM              32                      //regfile数目
+`define DOUBLE_REG_BUS_WIDTH 2*`REG_BUS_WIDTH
+`define DOUBLE_REG_BUS       `DOUBLE_REG_BUS_WIDTH-1:0   
+//***********************
+//控制状态寄存器宏定义
+//***********************
+`define CSR_ADDR_BUS_WIDTH  12                      //csr地址总线宽度
+`define CSR_ADDR_BUS        `CSR_ADDR_BUS_WIDTH-1:0 //csr地址总线
+// CSR 地址
+`define CSR_CYCLE   12'hc00
+`define CSR_CYCLEH  12'hc80
+`define CSR_MTVEC   12'h305
+`define CSR_MCAUSE  12'h342
+`define CSR_MEPC    12'h341
+`define CSR_MIE     12'h304
+`define CSR_MSTATUS 12'h300
+`define CSR_MSCRATCH 12'h340

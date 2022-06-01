@@ -9,11 +9,19 @@ module exu (
     input   wire    [`REG_ADDR_BUS] rd_addr_i       ,
     input   wire                    rd_we_i         ,
     input   wire    [`DEC_INFO_BUS] dec_info_bus_i  ,
+    input   wire    [`CSR_ADDR_BUS] csr_waddr_i     ,
+    input   wire                    csr_we_i        ,
+
+
 
     //to lsu, to idu
     output  wire                    rd_we_o         ,
     output  wire    [`REG_BUS]      rd_mem_data_o   ,
     output  wire    [`REG_ADDR_BUS] rd_addr_o       ,
+    output  wire                    csr_we_o        ,
+    output  wire    [`REG_BUS]      csr_wdata_o     ,
+    output  wire    [`CSR_ADDR_BUS] csr_waddr_o     ,
+
 
     //to lsu
     output  wire    [`MEM_ADDR_BUS] mem_addr_o      ,
@@ -65,6 +73,14 @@ module exu (
     wire    inst_j_op = dec_info_bus_i[`DEC_INST_OP] == `DEC_INST_J;
     wire    inst_j_jal = dec_info_bus_i[`DEC_INST_J_JAL];
     wire    inst_j_jalr = dec_info_bus_i[`DEC_INST_J_JALR];
+    //CONTROL STATE REGISTER instruction 
+    wire    inst_csr_op = dec_info_bus_i[`DEC_INST_OP] == `DEC_INST_CSR;
+    wire    inst_csr_csrrw = dec_info_bus_i[`DEC_INST_CSR_CSRRW];
+    wire    inst_csr_csrrs = dec_info_bus_i[`DEC_INST_CSR_CSRRS];
+    wire    inst_csr_csrrc = dec_info_bus_i[`DEC_INST_CSR_CSRRC];
+    wire    inst_csr_csrrwi = dec_info_bus_i[`DEC_INST_CSR_CSRRWI];
+    wire    inst_csr_csrrsi = dec_info_bus_i[`DEC_INST_CSR_CSRRSI];
+    wire    inst_csr_csrrci = dec_info_bus_i[`DEC_INST_CSR_CSRRCI];    
 
     //R and I instruction result
     wire    [`REG_BUS]  inst_r_i_data = op2_data_i & {`REG_BUS_WIDTH{inst_r_op}} | 
@@ -114,10 +130,23 @@ module exu (
     wire    [`REG_BUS]  inst_s_res = op2_data_i & {`REG_BUS_WIDTH{inst_s_op}};
 
     //J(UMP) instruction result
-    wire    [`REG_BUS]  inst_j_res = (pc_i + `REG_BUS_WIDTH'd4) & {`REG_BUS_WIDTH{inst_j_op & (inst_j_jal | inst_j_jalr)}};
+    wire    [`REG_BUS]  inst_j_res = (pc_i + `REG_BUS_WIDTH'd4) & {`REG_BUS_WIDTH{(inst_j_jal | inst_j_jalr) & inst_j_op}};
 
+    //CONTROL STATE REGISTER instruction result
+    wire    [`REG_BUS]  inst_csr_res = op2_data_i & {`REG_BUS_WIDTH{inst_csr_op}};
 
-    assign rd_mem_data_o = inst_r_i_res | inst_u_res | inst_s_res | inst_j_res;
+    assign csr_wdata_o = (op1_data_i & {`REG_BUS_WIDTH{(inst_csr_csrrw & inst_csr_op)}}) |
+                         ((op2_data_i | op1_data_i) & {`REG_BUS_WIDTH{inst_csr_csrrs & inst_csr_op}}) |
+                         ((op2_data_i & ~op1_data_i) & {`REG_BUS_WIDTH{(inst_csr_csrrc & inst_csr_op)}}) |
+                         (imm_data_i & {`REG_BUS_WIDTH{(inst_csr_csrrwi & inst_csr_op)}}) |
+                         ((op2_data_i | imm_data_i) & {`REG_BUS_WIDTH{(inst_csr_csrrsi & inst_csr_op)}}) |
+                         ((op2_data_i & ~imm_data_i) & {`REG_BUS_WIDTH{(inst_csr_csrrci & inst_csr_op)}}); 
+
+    assign csr_we_o = csr_we_i;    
+    assign csr_waddr_o = csr_waddr_i;
+ 
+
+    assign rd_mem_data_o = inst_r_i_res | inst_u_res | inst_s_res | inst_j_res | inst_csr_res;
     assign rd_we_o = rd_we_i;
     assign rd_addr_o = rd_addr_i;
 

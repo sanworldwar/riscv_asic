@@ -35,6 +35,8 @@ module openriscv (
     wire    [`REG_ADDR_BUS] id_rd_addr_o        ;
     wire                    id_rd_we_o          ;
     wire    [`DEC_INFO_BUS] id_dec_info_bus_o   ;
+    wire    [`CSR_ADDR_BUS] id_csr_waddr_o      ;
+    wire                    id_csr_we_o         ;
 
     //连接idu和regfile的信号
     wire    [`REG_ADDR_BUS] id_rs1_addr_o   ;
@@ -51,6 +53,11 @@ module openriscv (
     wire                    id_jump_req_o   ;
     wire    [`REG_BUS]      id_jump_pc_o    ;
 
+   //连接idu和csr_regfile的信号
+    wire    [`REG_BUS]      id_csr_rdata_i  ;
+    wire    [`CSR_ADDR_BUS] id_csr_raddr_o  ;
+    wire                    id_csr_re_o     ;
+
     //连接id_ex和exu的信号
     wire    [`REG_BUS]      ex_pc_i             ;
     wire    [`REG_BUS]      ex_op1_data_i       ;
@@ -59,11 +66,16 @@ module openriscv (
     wire    [`REG_ADDR_BUS] ex_rd_addr_i        ;
     wire                    ex_rd_we_i          ;
     wire    [`DEC_INFO_BUS] ex_dec_info_bus_i   ;
+    wire    [`CSR_ADDR_BUS] ex_csr_waddr_i      ;
+    wire                    ex_csr_we_i         ;
 
     //连接exu和ex_ls和idu的信号
     wire                    ex_rd_we_o          ;
     wire    [`REG_BUS]      ex_rd_mem_data_o    ;
     wire    [`REG_ADDR_BUS] ex_rd_addr_o        ;
+    wire                    ex_csr_we_o         ;
+    wire    [`REG_BUS]      ex_csr_wdata_o      ;    
+    wire    [`CSR_ADDR_BUS] ex_csr_waddr_o      ;
     
     //连接exu和ex_ls的信号
     wire    [`MEM_ADDR_BUS] ex_mem_addr_o       ;
@@ -78,6 +90,11 @@ module openriscv (
     wire    [`REG_ADDR_BUS] ls_rd_addr_i        ;
     wire    [`MEM_ADDR_BUS] ls_mem_addr_i       ;
     wire    [`EXE_INFO_BUS] ls_exe_info_bus_i   ;
+
+    //连接ex_ls和csr_regfile的信号
+    wire                    wb_csr_we_i         ;
+    wire    [`REG_BUS]      wb_csr_wdata_i      ;    
+    wire    [`CSR_ADDR_BUS] wb_csr_waddr_i      ;
 
     //连接lsu和ls_wb和idu的信号
     wire                    ls_rd_we_o     ;
@@ -152,11 +169,15 @@ module openriscv (
         .rd_addr_o(id_rd_addr_o),
         .rd_we_o(id_rd_we_o),
         .dec_info_bus_o(id_dec_info_bus_o),
-
+        .csr_waddr_o(id_csr_waddr_o),
+        .csr_we_o(id_csr_we_o),
 
         .ex_rd_we_i(ex_rd_we_o),
         .ex_rd_addr_i(ex_rd_addr_o),
         .ex_rd_data_i(ex_rd_mem_data_o),
+        .ex_csr_we_i(ex_csr_we_o),
+        .ex_csr_wdata_i(ex_csr_wdata_o),
+        .ex_csr_waddr_i(ex_csr_waddr_o),
 
         .ls_rd_we_i(ls_rd_we_o),
         .ls_rd_addr_i(ls_rd_addr_o),
@@ -165,7 +186,11 @@ module openriscv (
         .stallreq_o(id_stallreq_o),
 
         .jump_pc_o(id_jump_pc_o),
-        .jump_req_o(id_jump_req_o)
+        .jump_req_o(id_jump_req_o),
+
+        .csr_rdata_i(id_csr_rdata_i),
+        .csr_raddr_o(id_csr_raddr_o),
+        .csr_re_o(id_csr_re_o)
     );
 
     id_ex u_id_ex(
@@ -179,6 +204,8 @@ module openriscv (
         .rd_addr_i(id_rd_addr_o),
         .rd_we_i(id_rd_we_o),
         .dec_info_bus_i(id_dec_info_bus_o),
+        .csr_waddr_i(id_csr_waddr_o),
+        .csr_we_i(id_csr_we_o),
 
         .pc_o(ex_pc_i),
         .op1_data_o(ex_op1_data_i),
@@ -187,6 +214,8 @@ module openriscv (
         .rd_addr_o(ex_rd_addr_i),
         .rd_we_o(ex_rd_we_i),
         .dec_info_bus_o(ex_dec_info_bus_i),
+        .csr_waddr_o(ex_csr_waddr_i),
+        .csr_we_o(ex_csr_we_i),        
 
         .stall_i(ctrl_stall_o)
     );
@@ -199,10 +228,15 @@ module openriscv (
         .rd_addr_i(ex_rd_addr_i),
         .rd_we_i(ex_rd_we_i),
         .dec_info_bus_i(ex_dec_info_bus_i),
+        .csr_waddr_i(ex_csr_waddr_i),
+        .csr_we_i(ex_csr_we_i),
 
         .rd_we_o(ex_rd_we_o),
         .rd_mem_data_o(ex_rd_mem_data_o),
         .rd_addr_o(ex_rd_addr_o),
+        .csr_we_o(ex_csr_we_o),
+        .csr_wdata_o(ex_csr_wdata_o),
+        .csr_waddr_o(ex_csr_waddr_o),
 
         .mem_addr_o(ex_mem_addr_o),
         .exe_info_bus_o(ex_exe_info_bus_o),
@@ -217,6 +251,9 @@ module openriscv (
         .rd_we_i(ex_rd_we_o),
         .rd_mem_data_i(ex_rd_mem_data_o),
         .rd_addr_i(ex_rd_addr_o),
+        .csr_we_i(ex_csr_we_o),
+        .csr_wdata_i(ex_csr_wdata_o),
+        .csr_waddr_i(ex_csr_waddr_o),
 
         .mem_addr_i(ex_mem_addr_o),
         .exe_info_bus_i(ex_exe_info_bus_o),
@@ -228,7 +265,11 @@ module openriscv (
         .mem_addr_o(ls_mem_addr_i),
         .exe_info_bus_o(ls_exe_info_bus_i),
 
-        .stall_i(ctrl_stall_o)
+        .stall_i(ctrl_stall_o),
+
+        .csr_we_o(wb_csr_we_i),
+        .csr_wdata_o(wb_csr_wdata_i),
+        .csr_waddr_o(wb_csr_waddr_i)
     );
 
     lsu u_lsu(
@@ -286,5 +327,18 @@ module openriscv (
         .ex_stallreq_i(ex_stallreq_o),
         .stall_o(ctrl_stall_o)
     );
+
+    csr_regfile u_csr_regfile(
+        .clk(clk),
+        .rst_n(rst_n),
+
+        .rdata_o(id_csr_rdata_i),
+        .raddr_i(id_csr_raddr_o),
+        .re_i(id_csr_re_o),
+
+        .wdata_i(wb_csr_wdata_i),
+        .waddr_i(wb_csr_waddr_i),
+        .we_i(wb_csr_we_i)
+    );    
 
 endmodule
