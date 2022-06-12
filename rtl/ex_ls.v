@@ -23,16 +23,17 @@ module ex_ls (
     output  wire    [`MEM_ADDR_BUS] mem_addr_o      ,
     output  wire    [`EXE_INFO_BUS] exe_info_bus_o  ,
 
-    //to ctrl
+    //from ctrl
     input   wire    [5:0]           stall_i         ,
+    input   wire    [3:0]           flush_i         ,
 
-    //csr_regfile
+    //to csr_regfile
     output  wire                    csr_we_o        ,
     output  wire    [`REG_BUS]      csr_wdata_o     ,
     output  wire    [`CSR_ADDR_BUS] csr_waddr_o     
 );
     
-    wire    clr = stall_i[3] & !stall_i[4]; //执行暂停，而访存继续
+    wire    clr = (stall_i[3] & !stall_i[4]) | flush_i[2]; //执行暂停，而访存继续
     wire    load = !stall_i[3];
 
     wire    rd_we_r;

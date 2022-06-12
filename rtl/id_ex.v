@@ -26,11 +26,12 @@ module id_ex (
     output  wire    [`CSR_ADDR_BUS] csr_waddr_o     ,
     output  wire                    csr_we_o        ,
 
-    //to ctrl
-    input   wire    [5:0]           stall_i              
+    //from ctrl
+    input   wire    [5:0]           stall_i         ,
+    input   wire    [3:0]           flush_i              
 );
 
-    wire    clr = stall_i[2] & !stall_i[3]; //译码暂停，而执行继续
+    wire    clr = (stall_i[2] & !stall_i[3]) | flush_i[1]; //译码暂停，而执行继续/冲刷译码
     wire    load = !stall_i[2];
 
 

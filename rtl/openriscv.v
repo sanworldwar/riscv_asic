@@ -27,7 +27,7 @@ module openriscv (
     wire    [`REG_BUS]  id_pc_i         ;
     wire    [31:0]      id_inst_i       ;
     
-    //连接idu和id_ex的信号
+    //连接idu和id_ex的信号(pc_o also to excp)
     wire    [`REG_BUS]      id_pc_o             ;
     wire    [`REG_BUS]      id_op1_data_o       ;
     wire    [`REG_BUS]      id_op2_data_o       ;
@@ -57,6 +57,9 @@ module openriscv (
     wire    [`REG_BUS]      id_csr_rdata_i  ;
     wire    [`CSR_ADDR_BUS] id_csr_raddr_o  ;
     wire                    id_csr_re_o     ;
+
+    //连接idu和excp的信号
+    wire    [`DEC_SYS_BUS]  id_dec_sys_bus_o    ;
 
     //连接id_ex和exu的信号
     wire    [`REG_BUS]      ex_pc_i             ;
@@ -120,8 +123,27 @@ module openriscv (
     wire    [`REG_BUS]      wb_rd_data_i    ;
     wire    [`REG_ADDR_BUS] wb_rd_addr_i    ; 
 
-    //连接ctrl和ifu, if_id, id_ex, ex_ls, ls_wb的信号
+    //连接ctrl和ifu, if_id, id_ex, ex_ls, ls_wb的停顿信号
     wire    [5:0]           ctrl_stall_o    ;
+
+    //连接ctrl和if_id, id_ex, ex_ls, ls_wb的冲刷信号
+    wire    [3:0]           ctrl_flush_o    ;
+
+    //连接excp和csr_regs信号
+    wire    [`REG_BUS]      excp_csr_mtvec_i    ;
+    wire    [`REG_BUS]      excp_csr_mepc_i     ;
+    wire    [`REG_BUS]      excp_csr_mstatus_i  ;            
+
+    wire                    excp_csr_we_o       ;
+    wire    [`REG_BUS]      excp_csr_wdata_o    ; 
+    wire    [`CSR_ADDR_BUS] excp_csr_waddr_o    ;
+
+    //连接excp和ctrl信号
+    wire                    excp_stallreq_o     ;
+
+    //连接excp和ifu地址跳转信号
+    wire                    excp_jump_req_o   ;
+    wire    [`REG_BUS]      excp_jump_pc_o    ;
 
     ifu u_ifu(
         .clk(clk),
@@ -135,7 +157,10 @@ module openriscv (
         .stall_i(ctrl_stall_o),
 
         .jump_pc_i(id_jump_pc_o),
-        .jump_req_i(id_jump_req_o)
+        .jump_req_i(id_jump_req_o),
+
+        .excp_jump_pc_i(excp_jump_pc_o),
+        .excp_jump_req_i(excp_jump_req_o)
     );
 
     if_id u_if_id(
@@ -148,7 +173,8 @@ module openriscv (
         .pc_o(id_pc_i),
         .inst_o(id_inst_i),
 
-        .stall_i(ctrl_stall_o)
+        .stall_i(ctrl_stall_o),
+        .flush_i(ctrl_flush_o)
     );
 
     idu u_idu(
@@ -190,7 +216,9 @@ module openriscv (
 
         .csr_rdata_i(id_csr_rdata_i),
         .csr_raddr_o(id_csr_raddr_o),
-        .csr_re_o(id_csr_re_o)
+        .csr_re_o(id_csr_re_o),
+
+        .dec_sys_bus_o(id_dec_sys_bus_o)
     );
 
     id_ex u_id_ex(
@@ -217,7 +245,8 @@ module openriscv (
         .csr_waddr_o(ex_csr_waddr_i),
         .csr_we_o(ex_csr_we_i),        
 
-        .stall_i(ctrl_stall_o)
+        .stall_i(ctrl_stall_o),
+        .flush_i(ctrl_flush_o)
     );
 
     exu u_exu(
@@ -266,6 +295,7 @@ module openriscv (
         .exe_info_bus_o(ls_exe_info_bus_i),
 
         .stall_i(ctrl_stall_o),
+        .flush_i(ctrl_flush_o),
 
         .csr_we_o(wb_csr_we_i),
         .csr_wdata_o(wb_csr_wdata_i),
@@ -304,7 +334,8 @@ module openriscv (
         .rd_data_o(wb_rd_data_i),
         .rd_addr_o(wb_rd_addr_i),
 
-        .stall_i(ctrl_stall_o)
+        .stall_i(ctrl_stall_o),
+        .flush_i(ctrl_flush_o)
     );
 
     regfile u_regfile(
@@ -325,7 +356,10 @@ module openriscv (
     ctrl u_ctrl(
         .id_stallreq_i(id_stallreq_o),
         .ex_stallreq_i(ex_stallreq_o),
-        .stall_o(ctrl_stall_o)
+        .stall_o(ctrl_stall_o),
+
+        .excp_stallreq_i(excp_stallreq_o),
+        .flush_o(ctrl_flush_o)
     );
 
     csr_regfile u_csr_regfile(
@@ -338,7 +372,38 @@ module openriscv (
 
         .wdata_i(wb_csr_wdata_i),
         .waddr_i(wb_csr_waddr_i),
-        .we_i(wb_csr_we_i)
-    );    
+        .we_i(wb_csr_we_i),
+
+        .excp_wdata_i(excp_csr_wdata_o),
+        .excp_waddr_i(excp_csr_waddr_o),
+        .excp_we_i(excp_csr_we_o),
+
+        .mtvec_o(excp_csr_mtvec_i),
+        .mepc_o(excp_csr_mepc_i),
+        .mstatus_o(excp_csr_mstatus_i)
+    );
+
+    excp u_excp(
+        .clk(clk),
+        .rst_n(rst_n),
+
+        .timer_irq_i(),
+
+        .dec_sys_bus_i(id_dec_sys_bus_o),
+        .pc_i(id_pc_o),
+
+        .csr_mtvec_i(excp_csr_mtvec_i),
+        .csr_mepc_i(excp_csr_mepc_i),
+        .csr_mstatus_i(excp_csr_mstatus_i),
+
+        .csr_we_o(excp_csr_we_o),
+        .csr_wdata_o(excp_csr_wdata_o),
+        .csr_waddr_o(excp_csr_waddr_o),
+
+        .stallreq_o(excp_stallreq_o),
+
+        .jump_req_o(excp_jump_req_o),
+        .jump_pc_o(excp_jump_pc_o)
+    );
 
 endmodule

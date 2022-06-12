@@ -4,13 +4,22 @@ module csr_regfile (
     input   clk     ,
     input   rst_n   ,
 
-    output  wire    [`REG_BUS]      rdata_o    ,
-    input   wire    [`CSR_ADDR_BUS] raddr_i    ,
-    input   wire                    re_i       ,
+    output  wire    [`REG_BUS]      rdata_o     ,
+    input   wire    [`CSR_ADDR_BUS] raddr_i     ,
+    input   wire                    re_i        ,
 
-    input   wire    [`REG_BUS]      wdata_i    ,
-    input   wire    [`CSR_ADDR_BUS] waddr_i    ,
-    input   wire                    we_i        
+    input   wire    [`REG_BUS]      wdata_i     ,
+    input   wire    [`CSR_ADDR_BUS] waddr_i     ,
+    input   wire                    we_i        ,
+
+    //from excp
+    input   wire    [`REG_BUS]      excp_wdata_i    ,
+    input   wire    [`CSR_ADDR_BUS] excp_waddr_i    ,
+    input   wire                    excp_we_i       ,
+
+    output  wire    [`REG_BUS]      mtvec_o         ,
+    output  wire    [`REG_BUS]      mepc_o          ,
+    output  wire    [`REG_BUS]      mstatus_o       
 );
 
     reg [`DOUBLE_REG_BUS]   cycle;
@@ -18,6 +27,7 @@ module csr_regfile (
     reg [`REG_BUS]          mcause;
     reg [`REG_BUS]          mepc;
     reg [`REG_BUS]          mie;
+    reg [`REG_BUS]          mip;
     reg [`REG_BUS]          mstatus;
     reg [`REG_BUS]          mscratch;
 
@@ -29,8 +39,37 @@ module csr_regfile (
         end
     end    
 
+
+    //异常发生时写入和正常写回不会冲突
     always @ (posedge clk) begin
-        if (we_i) begin
+        if (excp_we_i) begin
+            case (excp_waddr_i)
+                `CSR_MTVEC: begin
+                    mtvec <= excp_wdata_i;
+                end
+                `CSR_MCAUSE: begin
+                    mcause <= excp_wdata_i;
+                end
+                `CSR_MEPC: begin
+                    mepc <= excp_wdata_i;
+                end
+                `CSR_MIE: begin
+                    mie <= excp_wdata_i;
+                end
+                `CSR_MIP: begin
+                    mip <= excp_wdata_i;
+                end
+                `CSR_MSTATUS: begin
+                    mstatus <= excp_wdata_i;
+                end
+                `CSR_MSCRATCH: begin
+                    mscratch <= excp_wdata_i;
+                end
+                default: begin
+
+                end
+            endcase
+        end else if (we_i) begin
             case (waddr_i)
                 `CSR_MTVEC: begin
                     mtvec <= wdata_i;
@@ -44,6 +83,9 @@ module csr_regfile (
                 `CSR_MIE: begin
                     mie <= wdata_i;
                 end
+                `CSR_MIP: begin
+                    mip <= wdata_i;
+                end
                 `CSR_MSTATUS: begin
                     mstatus <= wdata_i;
                 end
@@ -56,6 +98,7 @@ module csr_regfile (
             endcase
         end
     end
+
 
     reg [`REG_BUS]  rdata_r;
     always @ (*) begin
@@ -82,6 +125,9 @@ module csr_regfile (
                     `CSR_MIE: begin
                         rdata_r = mie;
                     end
+                    `CSR_MIP: begin
+                        rdata_r = mip;
+                    end
                     `CSR_MSTATUS: begin
                         rdata_r = mstatus;
                     end
@@ -100,4 +146,9 @@ module csr_regfile (
 
     assign rdata_o = rdata_r;
     
+    assign mtvec_o = mtvec;
+    assign mepc_o = mepc;
+    assign mstatus_o = mstatus;    
+
+
 endmodule  //csr_regs

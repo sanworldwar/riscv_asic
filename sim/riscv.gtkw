@@ -1,27 +1,29 @@
 [*]
 [*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
-[*] Wed Jun  1 07:32:50 2022
+[*] Thu Jun  9 10:31:54 2022
 [*]
 [dumpfile] "/home/fxr/rsic-v/sim/openriscv_sopc_tb.vcd"
-[dumpfile_mtime] "Wed Jun  1 07:16:36 2022"
-[dumpfile_size] 45123
+[dumpfile_mtime] "Thu Jun  9 10:30:29 2022"
+[dumpfile_size] 49281
 [savefile] "/home/fxr/rsic-v/sim/riscv.gtkw"
-[timestart] 77000
-[size] 1846 905
+[timestart] 153500
+[size] 1846 902
 [pos] -39 -39
-*-15.539907 273900 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-15.539907 377800 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] openriscv_sopc_tb.
 [treeopen] openriscv_sopc_tb.u_openrisc_sopc.
 [treeopen] openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.
 [sst_width] 233
 [signals_width] 272
 [sst_expanded] 1
-[sst_vpaned_height] 529
+[sst_vpaned_height] 527
 @28
 openriscv_sopc_tb.u_openrisc_sopc.clk
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_ifu.jump_req_i
 @22
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_ifu.jump_pc_i[31:0]
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_ifu.pc_o[31:0]
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_ifu.pc_r[31:0]
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_ifu.inst_o[31:0]
 @800200
 -idu
@@ -40,10 +42,11 @@ openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.csr_rdata[31:0]
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.csr_addr[11:0]
 @28
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.csr_re_o
-@23
+@22
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.rs1_data[31:0]
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.rs2_data[31:0]
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.op1_data_o[31:0]
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.op2_data_o[31:0]
-@22
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.imm_data_o[31:0]
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.rd_addr_o[4:0]
 @28
@@ -121,6 +124,24 @@ openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.inst_csr_csrrw
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.inst_csr_csrrwi
 @1401200
 -csr_instruction
+@c00200
+-bj_instruction
+@28
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.inst_b_op
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.inst_b_beq
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.inst_b_bge
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.inst_b_bgeu
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.inst_b_blt
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.inst_b_bltu
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.inst_b_bne
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.inst_b_jump
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.inst_j_op
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.inst_j_jal
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.inst_j_jalr
+@22
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.inst_bj_pc[31:0]
+@1401200
+-bj_instruction
 @22
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.ex_rd_addr_i[4:0]
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_idu.ex_rd_data_i[31:0]
@@ -200,21 +221,38 @@ openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_exu.inst_s_sh
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_exu.inst_s_sw
 @1401200
 -s_instuction_ex
+@c00200
+-csr_instruction
+@28
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_exu.inst_csr_op
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_exu.inst_csr_csrrc
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_exu.inst_csr_csrrci
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_exu.inst_csr_csrrs
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_exu.inst_csr_csrrsi
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_exu.inst_csr_csrrw
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_exu.inst_csr_csrrwi
+@1401200
+-csr_instruction
 @22
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_exu.inst_r_i_res[31:0]
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_exu.inst_u_res[31:0]
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_exu.inst_l_s_addr[31:0]
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_exu.inst_s_res[31:0]
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_exu.inst_j_res[31:0]
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_exu.inst_csr_res[31:0]
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_exu.mem_addr_o[31:0]
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_exu.rd_mem_data_o[31:0]
 @28
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_exu.rd_we_o
+@22
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_exu.csr_waddr_o[11:0]
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_exu.csr_wdata_o[31:0]
+@28
+openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_exu.csr_we_o
 @1000200
 -exu
-@800200
--lsu
 @c00200
+-lsu
 -l_instruction_ls
 @28
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_lsu.inst_l_op
@@ -251,7 +289,7 @@ openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_lsu.rd_addr_o[4:0]
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_lsu.rd_data_o[31:0]
 @28
 openriscv_sopc_tb.u_openrisc_sopc.u_openriscv.u_lsu.rd_we_o
-@1000200
+@1401200
 -lsu
 [pattern_trace] 1
 [pattern_trace] 0

@@ -14,11 +14,12 @@ module ls_wb (
     output  wire    [`REG_BUS]      rd_data_o   ,
     output  wire    [`REG_ADDR_BUS] rd_addr_o   ,
 
-    //to ctrl
-    input   wire    [5:0]           stall_i   
+    //from ctrl
+    input   wire    [5:0]           stall_i     ,
+    input   wire    [3:0]           flush_i     
 );
     
-    wire    clr = stall_i[4] & !stall_i[5]; //访存暂停，而写回继续
+    wire    clr = (stall_i[4] & !stall_i[5]) | flush_i[3]; //访存暂停，而写回继续
     wire    load = !stall_i[4];
 
     wire    rd_we_r;

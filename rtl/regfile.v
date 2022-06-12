@@ -24,11 +24,11 @@ module regfile (
     end
     
     assign rdata1_o = re1_i ? (
-                    (raddr1_i == `REG_ADDR_BUS_WIDTH'h0) ? `ZERO_WORD : (
+                    (raddr1_i == `REG_ADDR_BUS_WIDTH'h0) ? `REG_BUS_WIDTH'h0 : (
                     (raddr1_i == waddr_i) ? wdata_i : gpr_regs[raddr1_i])
                     ) : `REG_BUS_WIDTH'h0;    
     assign rdata2_o = re2_i ? (
-                    (raddr2_i == `REG_ADDR_BUS_WIDTH'h0) ? `ZERO_WORD : (
+                    (raddr2_i == `REG_ADDR_BUS_WIDTH'h0) ? `REG_BUS_WIDTH'h0 : (
                     (raddr2_i == waddr_i) ? wdata_i : gpr_regs[raddr2_i])
                     ) : `REG_BUS_WIDTH'h0;    
 

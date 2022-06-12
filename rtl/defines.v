@@ -10,8 +10,8 @@
 `define WRITE_DISABLE       1'b0            //写禁止
 `define READ_ENABLE         1'b1            //读使能
 `define READ_DISABLE        1'b0            //读禁止
-
-
+`define EXCP_SYNC_ASSERT    2'b01           //同步异常
+`define EXCP_ASYNC_ASSERT   2'b10           //异步步异常
 
 //***********************
 //IDU信息总线宏定义
@@ -96,12 +96,20 @@
 `define DEC_INST_CSR_CSRRSI     `DEC_INST_CSR_CSRRWI+1
 `define DEC_INST_CSR_CSRRCI     `DEC_INST_CSR_CSRRSI+1
 
-`define DEC_CSR_INFO_BUS_WIDTH `DEC_INST_CSR_CSRRCI+1          //CSR型指令译码信息宽度
+`define DEC_CSR_INFO_BUS_WIDTH `DEC_INST_CSR_CSRRCI+1      //CSR型指令译码信息宽度
 `define DEC_CSR_INFO_BUS       `DEC_CSR_INFO_BUS_WIDTH-1:0 //CSR型指令译码信息
 
 //dec info bus
 `define DEC_INFO_BUS_WIDTH      `DEC_R_INFO_BUS_WIDTH       //选取最长宽度为DEC信息总线宽度
 `define DEC_INFO_BUS            `DEC_INFO_BUS_WIDTH-1:0     //DEC信息总线
+
+//SYSTEM instruction info bus
+`define DEC_SYS_BUS_WIDTH       3                           //特权(系统)指令信息总线宽度
+`define DEC_SYS_BUS             `DEC_SYS_BUS_WIDTH-1:0      //特权(系统)指令信息总线
+
+`define DEC_SYS_INST_ECALL      0                           //ecall指令
+`define DEC_SYS_INST_EBREAK     `DEC_SYS_INST_ECALL+1
+`define DEC_SYS_INST_MRET       `DEC_SYS_INST_EBREAK+1
 
 //***********************
 //EXE信息总线宏定义
@@ -168,5 +176,6 @@
 `define CSR_MCAUSE  12'h342
 `define CSR_MEPC    12'h341
 `define CSR_MIE     12'h304
+`define CSR_MIP     12'h344
 `define CSR_MSTATUS 12'h300
 `define CSR_MSCRATCH 12'h340

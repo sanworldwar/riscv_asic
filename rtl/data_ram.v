@@ -18,6 +18,6 @@ module data_ram (
         end
     end
 
-    assign rdata_o = re_i ? data_mem[raddr_i] : rdata_o;
+    assign rdata_o = re_i ? data_mem[raddr_i] : `MEM_DATA_BUS_WIDTH'h0;
     
 endmodule

@@ -2,15 +2,16 @@
     .global _start;
 
 _start:
+    csrrwi x0, mtvec, 0x00000014
+    csrrwi x0, mstatus, 0x00000008
     lw x1, 0x1(x0)
-    bne x1, x2, EXIT
+    ecall    
+    bne x1, x2, aa
     ori x1, x2, 0x4
     and x1, x2, x3
-EXIT:
+    csrrw x1, mcause, x0
+aa:
     addi x1, x2, 0x4
-    csrrw x0, mepc, x2
-    csrrwi x0, mtvec, 0x2
-    csrrsi x1, mepc, 0xf
-    csrrc x1, mepc, x2
+    ori x1, x2, 0x4
 
 

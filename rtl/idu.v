@@ -13,7 +13,7 @@ module idu (
     output  wire    [`REG_ADDR_BUS] rs2_addr_o      ,
     output  wire                    rs2_re_o        ,    
     
-    //  to exu  
+    //  to exu(pc_o also to excp)  
     output  wire    [`REG_BUS]      pc_o            ,
     output  wire    [`REG_BUS]      op1_data_o      ,
     output  wire    [`REG_BUS]      op2_data_o      ,
@@ -47,7 +47,10 @@ module idu (
     //to csr
     input   wire    [`REG_BUS]      csr_rdata_i     ,
     output  wire    [`CSR_ADDR_BUS] csr_raddr_o     ,
-    output  wire                    csr_re_o              
+    output  wire                    csr_re_o        ,
+
+    //to excp
+    output  wire    [`DEC_SYS_BUS]  dec_sys_bus_o   
 );
 
     wire    [`REG_ADDR_BUS] rs1_addr = inst_i[19:15];
@@ -212,8 +215,11 @@ module idu (
     //SYSTEM instruction no use
     wire    inst_sys_ecall = inst_i[31:20] == 12'b0000_0000_0000 & funct3_000 & opcode_6_2_11100 & opcode_1_0_11;
     wire    inst_sys_ebreak = inst_i[31:20] == 12'b0000_0000_0001 & funct3_000 & opcode_6_2_11100 & opcode_1_0_11;
-    
-    wire    inst_sys_op = inst_sys_ecall | inst_sys_ebreak;
+    wire    inst_sys_mret = inst_i[31:20] == 12'b0011_0000_0010 & funct3_000 & opcode_6_2_11100 & opcode_1_0_11;
+
+    assign dec_sys_bus_o[`DEC_SYS_INST_ECALL] = inst_sys_ecall;
+    assign dec_sys_bus_o[`DEC_SYS_INST_EBREAK] = inst_sys_ebreak;
+    assign dec_sys_bus_o[`DEC_SYS_INST_MRET] = inst_sys_mret;
 
     //CONTROL STATE REGISTER instruction
     wire    inst_csr_csrrw = funct3_001 & opcode_6_2_11100 & opcode_1_0_11;
@@ -258,7 +264,7 @@ module idu (
     assign rs2_addr_o = rs2_addr;
     assign rs2_re_o = inst_r_op | inst_s_op | inst_b_op;
 
-    assign rd_addr_o = rd_addr;
+    assign rd_addr_o = {`REG_BUS_WIDTH{~(inst_s_op | inst_b_op)}} & rd_addr;
     assign rd_we_o = inst_r_op | inst_i_op | inst_u_op | inst_j_op | inst_csr_op;
 
     wire    [`REG_BUS]  csr_rdata = (csr_addr == ex_csr_waddr_i) ? ex_csr_wdata_i : csr_rdata_i;//数据前移
@@ -288,7 +294,7 @@ module idu (
         ({`DEC_INFO_BUS_WIDTH{inst_j_op}} & {{`DEC_INFO_BUS_WIDTH-`DEC_J_INFO_BUS_WIDTH{1'b0}}, dec_j_info_bus}) |
         ({`DEC_INFO_BUS_WIDTH{inst_csr_op}} & {{`DEC_INFO_BUS_WIDTH-`DEC_CSR_INFO_BUS_WIDTH{1'b0}}, dec_csr_info_bus});
    
-    //停顿流水线 //load-store, load-use, alu-branch, load-branch 
+    //停顿流水线 //load-store, load-use, load-branch 
     assign  stallreq_o = (rs1_addr != `REG_ADDR_BUS_WIDTH'h0) & (rs1_addr == ex_rd_addr_i) & rs1_re_o & !ex_rd_we_i |
                          (rs2_addr != `REG_ADDR_BUS_WIDTH'h0) & (rs2_addr == ex_rd_addr_i) & rs2_re_o & !ex_rd_we_i;
 
@@ -303,7 +309,7 @@ module idu (
                                      ((rs1_data + pc_i) & {`REG_BUS_WIDTH{inst_j_jalr}}) |
                                      ((imm + pc_i) & {`REG_BUS_WIDTH{(inst_b_jump)}});
 
-    assign jump_req_o = (inst_b_jump | inst_j_op) & ~stallreq_o;
+    assign jump_req_o = (inst_b_jump | inst_j_op);
     assign jump_pc_o = inst_bj_pc;
 
 endmodule
