@@ -28,7 +28,31 @@ module exu (
     output  wire    [`EXE_INFO_BUS] exe_info_bus_o  ,
 
     //to ctrl
-    output  wire                    stallreq_o
+    output  wire                stallreq_o          ,
+
+    //from excp
+    input   wire                mul_div_cancel_i    ,              
+
+    //to mul(mul_start_o also to excp)
+    output  wire                mul_start_o         ,
+    output  wire                mul_cancel_o        ,
+    output  wire                mul_signed_o        ,
+    output  wire    [`REG_BUS]  mul_op1_o           , //被乘数
+    output  wire    [`REG_BUS]  mul_op2_o           , //乘数
+    input   wire                mul_stop_i          ,
+    input   wire    [`REG_BUS]  mul_res_l_i         ,
+    input   wire    [`REG_BUS]  mul_res_h_i         ,
+
+    //to div(div_start_o also to excp)
+    output  wire                div_start_o         ,
+    output  wire                div_cancel_o        ,
+    output  wire                div_op1_signed_o    , //被除数符号位信号
+    output  wire                div_op2_signed_o    , //除数符号位信号     
+    output  wire    [`REG_BUS]  div_op1_o           , //被除数
+    output  wire    [`REG_BUS]  div_op2_o           , //除数
+    input   wire                div_stop_i          ,
+    input   wire    [`REG_BUS]  div_res_i           ,
+    input   wire    [`REG_BUS]  div_rem_i    
 );
     //R instruction
     wire    inst_r_op = dec_info_bus_i[`DEC_INST_OP] == `DEC_INST_R;
@@ -80,7 +104,20 @@ module exu (
     wire    inst_csr_csrrc = dec_info_bus_i[`DEC_INST_CSR_CSRRC];
     wire    inst_csr_csrrwi = dec_info_bus_i[`DEC_INST_CSR_CSRRWI];
     wire    inst_csr_csrrsi = dec_info_bus_i[`DEC_INST_CSR_CSRRSI];
-    wire    inst_csr_csrrci = dec_info_bus_i[`DEC_INST_CSR_CSRRCI];    
+    wire    inst_csr_csrrci = dec_info_bus_i[`DEC_INST_CSR_CSRRCI];  
+    //MUL and DIV instruction
+    wire    inst_md_op = dec_info_bus_i[`DEC_INST_OP] == `DEC_INST_MD;
+    wire    inst_md_mul = dec_info_bus_i[`DEC_INST_MD_MUL];
+    wire    inst_md_mulh = dec_info_bus_i[`DEC_INST_MD_MULH];
+    wire    inst_md_mulhsu = dec_info_bus_i[`DEC_INST_MD_MULHSU];
+    wire    inst_md_mulhu = dec_info_bus_i[`DEC_INST_MD_MULHU];
+    wire    inst_md_div = dec_info_bus_i[`DEC_INST_MD_DIV];
+    wire    inst_md_divu = dec_info_bus_i[`DEC_INST_MD_DIVU];
+    wire    inst_md_rem = dec_info_bus_i[`DEC_INST_MD_REM];
+    wire    inst_md_remu = dec_info_bus_i[`DEC_INST_MD_REMU];
+
+    wire    [`REG_BUS]  op1_data_comp = ~op1_data_i + 1'b1;
+    wire    [`REG_BUS]  op2_data_comp = ~op2_data_i + 1'b1;
 
     //R and I instruction result
     wire    [`REG_BUS]  inst_r_i_data = op2_data_i & {`REG_BUS_WIDTH{inst_r_op}} | 
@@ -135,6 +172,27 @@ module exu (
     //CONTROL STATE REGISTER instruction result
     wire    [`REG_BUS]  inst_csr_res = op2_data_i & {`REG_BUS_WIDTH{inst_csr_op}};
 
+    //MUL and DIV instruction result
+    assign mul_start_o = inst_md_op & (inst_md_mul | inst_md_mulh | inst_md_mulhsu | inst_md_mulhu) & !mul_stop_i;
+    assign mul_cancel_o = mul_div_cancel_i;
+    assign mul_signed_o = inst_md_op & 
+        ((inst_md_mulh & (op1_data_i[`REG_BUS_WIDTH-1] ^ op2_data_i[`REG_BUS_WIDTH-1])) | (inst_md_mulhsu & op1_data_i[`REG_BUS_WIDTH-1]));
+    assign mul_op1_o = inst_md_op & (inst_md_mulh | inst_md_mulhsu) & op1_data_i[`REG_BUS_WIDTH-1] ? op1_data_comp : op1_data_i;
+    assign mul_op2_o = inst_md_op & inst_md_mulh & op2_data_i[`REG_BUS_WIDTH-1] ? op2_data_comp : op2_data_i;
+
+    assign div_start_o = inst_md_op & (inst_md_div | inst_md_divu | inst_md_rem | inst_md_remu) & !div_stop_i;
+    assign div_cancel_o = mul_div_cancel_i;
+    assign div_op1_signed_o = inst_md_op & (inst_md_div | inst_md_rem) & op1_data_i[`REG_BUS_WIDTH-1];
+    assign div_op2_signed_o = inst_md_op & (inst_md_div | inst_md_rem) & op2_data_i[`REG_BUS_WIDTH-1];
+    assign div_op1_o = inst_md_op & (inst_md_div | inst_md_rem) & op1_data_i[`REG_BUS_WIDTH-1] ? op1_data_comp : op1_data_i;
+    assign div_op2_o = inst_md_op & (inst_md_div | inst_md_rem) & op2_data_i[`REG_BUS_WIDTH-1] ? op2_data_comp : op2_data_i;
+
+    wire    [`REG_BUS]  inst_md_res = 
+        (mul_res_l_i & {`REG_BUS_WIDTH{inst_md_mul & inst_md_op}}) |
+        (mul_res_h_i & {`REG_BUS_WIDTH{(inst_md_mulh | inst_md_mulhsu | inst_md_mulhu) & inst_md_op}}) |
+        (div_res_i & {`REG_BUS_WIDTH{(inst_md_div | inst_md_divu) & inst_md_op}}) |
+        (div_rem_i & {`REG_BUS_WIDTH{(inst_md_rem | inst_md_remu) & inst_md_op}});
+
     assign csr_wdata_o = (op1_data_i & {`REG_BUS_WIDTH{(inst_csr_csrrw & inst_csr_op)}}) |
                          ((op2_data_i | op1_data_i) & {`REG_BUS_WIDTH{inst_csr_csrrs & inst_csr_op}}) |
                          ((op2_data_i & ~op1_data_i) & {`REG_BUS_WIDTH{(inst_csr_csrrc & inst_csr_op)}}) |
@@ -146,7 +204,7 @@ module exu (
     assign csr_waddr_o = csr_waddr_i;
  
 
-    assign rd_mem_data_o = inst_r_i_res | inst_u_res | inst_s_res | inst_j_res | inst_csr_res;
+    assign rd_mem_data_o = inst_r_i_res | inst_u_res | inst_s_res | inst_j_res | inst_csr_res | inst_md_res;
     assign rd_we_o = rd_we_i;
     assign rd_addr_o = rd_addr_i;
 
@@ -170,6 +228,8 @@ module exu (
         {`EXE_INFO_BUS_WIDTH{inst_l_op}} & {{`EXE_INFO_BUS_WIDTH-`EXE_L_INFO_BUS_WIDTH{1'b0}}, exe_l_info_bus} |
         {`EXE_INFO_BUS_WIDTH{inst_s_op}} & {{`EXE_INFO_BUS_WIDTH-`EXE_S_INFO_BUS_WIDTH{1'b0}}, exe_s_info_bus};
     
-    assign  stallreq_o = 1'b0;
+    assign  stallreq_o = (mul_start_o & !mul_stop_i)  | (div_start_o & !div_stop_i);
+
+
 
 endmodule

@@ -9,7 +9,7 @@ OBJDUMP = $(CROSS_COMPILE)objdump
 
 OBJECTS = inst_rom.o
 
-CFLAG = -march=rv32i -mabi=ilp32
+CFLAG = -march=rv32im -mabi=ilp32
 
 export CROSS_COMPILE
 

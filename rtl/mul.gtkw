@@ -1,0 +1,46 @@
+[*]
+[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
+[*] Wed Jun 15 09:12:42 2022
+[*]
+[dumpfile] "/home/fxr/rsic-v/rtl/mul_tb.vcd"
+[dumpfile_mtime] "Wed Jun 15 09:12:02 2022"
+[dumpfile_size] 14720
+[savefile] "/home/fxr/rsic-v/rtl/mul.gtkw"
+[timestart] 0
+[size] 1846 902
+[pos] -39 -39
+*-7.000000 2219 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] mul_tb.
+[sst_width] 233
+[signals_width] 320
+[sst_expanded] 1
+[sst_vpaned_height] 527
+@24
+mul_tb.u_mul.clk
+mul_tb.u_mul.rst_n
+mul_tb.u_mul.mul_start_i
+@28
+mul_tb.u_mul.mul_signed_i
+mul_tb.u_mul.mul_cancel_i
+@24
+mul_tb.u_mul.mul_op1_i[31:0]
+mul_tb.u_mul.mul_op2_i[31:0]
+@28
+mul_tb.u_mul.mul_signed_r
+@24
+mul_tb.u_mul.mul_shr
+@22
+mul_tb.u_mul.count[5:0]
+@24
+mul_tb.u_mul.mul_op1_r[31:0]
+mul_tb.u_mul.mul_res_r[63:0]
+mul_tb.u_mul.add_op1[31:0]
+mul_tb.u_mul.add_op2[31:0]
+mul_tb.u_mul.add_res[32:0]
+mul_tb.u_mul.mul_stop_o
+@23
+mul_tb.u_mul.mul_res_h_o[31:0]
+@22
+mul_tb.u_mul.mul_res_l_o[31:0]
+[pattern_trace] 1
+[pattern_trace] 0

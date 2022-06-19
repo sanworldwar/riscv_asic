@@ -1,0 +1,43 @@
+[*]
+[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
+[*] Wed Jun 15 06:50:42 2022
+[*]
+[dumpfile] "/home/fxr/rsic-v/rtl/div_tb.vcd"
+[dumpfile_mtime] "Wed Jun 15 06:44:37 2022"
+[dumpfile_size] 8586
+[savefile] "/home/fxr/rsic-v/rtl/div.gtkw"
+[timestart] 1696
+[size] 1846 902
+[pos] -88 -87
+*-6.000000 1950 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] div_tb.
+[sst_width] 233
+[signals_width] 232
+[sst_expanded] 1
+[sst_vpaned_height] 527
+@28
+div_tb.u_div.clk
+@22
+div_tb.u_div.div_start_i
+@28
+div_tb.u_div.div_op1_signed_i
+div_tb.u_div.div_op2_signed_i
+div_tb.u_div.div_op1_signed_r
+div_tb.u_div.div_op2_signed_r
+@24
+div_tb.u_div.div_op1_i[31:0]
+div_tb.u_div.div_op2_i[31:0]
+div_tb.u_div.sub_op1[31:0]
+div_tb.u_div.sub_op2[31:0]
+div_tb.u_div.sub_res[31:0]
+div_tb.u_div.count[5:0]
+div_tb.u_div.div_shl
+@22
+div_tb.u_div.div_res_rem[63:0]
+div_tb.u_div.div_res_o[31:0]
+@23
+div_tb.u_div.div_rem_o[31:0]
+@28
+div_tb.u_div.div_stop_o
+[pattern_trace] 1
+[pattern_trace] 0

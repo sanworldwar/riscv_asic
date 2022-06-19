@@ -4,7 +4,7 @@
 _start:
     csrrwi x0, mtvec, 0x00000014
     csrrwi x0, mstatus, 0x00000008
-    lw x1, 0x1(x0)
+    mul x2, x2, x1
     ecall    
     bne x1, x2, aa
     ori x1, x2, 0x4

@@ -40,7 +40,7 @@ module csr_regfile (
     end    
 
 
-    //异常发生时写入和正常写回不会冲突
+    //异常发生时写入和正常写回不会冲突 ecall-csr
     always @ (posedge clk) begin
         if (excp_we_i) begin
             case (excp_waddr_i)

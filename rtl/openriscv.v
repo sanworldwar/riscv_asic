@@ -85,7 +85,29 @@ module openriscv (
     wire    [`EXE_INFO_BUS] ex_exe_info_bus_o   ;
 
     //连接exu和ctrl的信号
-    wire                    ex_stallreq_o       ;
+    wire                ex_stallreq_o       ;
+    wire                ex_mul_div_cancel_i ;
+
+    //连接exu和mul的信号
+    wire                ex_mul_start_o  ;
+    wire                ex_mul_cancel_o ;
+    wire                ex_mul_signed_o ;
+    wire    [`REG_BUS]  ex_mul_op1_o    ;
+    wire    [`REG_BUS]  ex_mul_op2_o    ;    
+    wire                ex_mul_stop_i   ; 
+    wire    [`REG_BUS]  ex_mul_res_l_i  ;
+    wire    [`REG_BUS]  ex_mul_res_h_i  ;       
+
+    //连接exu和div的信号    
+    wire                ex_div_start_o      ;
+    wire                ex_div_cancel_o     ;
+    wire                ex_div_op1_signed_o ;
+    wire                ex_div_op2_signed_o ;        
+    wire    [`REG_BUS]  ex_div_op1_o        ;
+    wire    [`REG_BUS]  ex_div_op2_o        ;    
+    wire                ex_div_stop_i       ;
+    wire    [`REG_BUS]  ex_div_res_i        ;          
+    wire    [`REG_BUS]  ex_div_rem_i        ;
 
     //连接ex_ls和lsu的信号
     wire                    ls_rd_we_i          ;
@@ -139,7 +161,7 @@ module openriscv (
     wire    [`CSR_ADDR_BUS] excp_csr_waddr_o    ;
 
     //连接excp和ctrl信号
-    wire                    excp_stallreq_o     ;
+    wire    [3:0]           excp_stallreq_o     ;
 
     //连接excp和ifu地址跳转信号
     wire                    excp_jump_req_o   ;
@@ -270,7 +292,28 @@ module openriscv (
         .mem_addr_o(ex_mem_addr_o),
         .exe_info_bus_o(ex_exe_info_bus_o),
 
-        .stallreq_o(ex_stallreq_o)
+        .stallreq_o(ex_stallreq_o),
+        
+        .mul_div_cancel_i(ex_mul_div_cancel_i),
+
+        .mul_start_o(ex_mul_start_o),
+        .mul_cancel_o(ex_mul_cancel_o),
+        .mul_signed_o(ex_mul_signed_o),
+        .mul_op1_o(ex_mul_op1_o),
+        .mul_op2_o(ex_mul_op2_o),
+        .mul_stop_i(ex_mul_stop_i),
+        .mul_res_l_i(ex_mul_res_l_i),
+        .mul_res_h_i(ex_mul_res_h_i),
+
+        .div_start_o(ex_div_start_o),
+        .div_cancel_o(ex_div_cancel_o),
+        .div_op1_signed_o(ex_div_op1_signed_o),
+        .div_op2_signed_o(ex_div_op2_signed_o),
+        .div_op1_o(ex_div_op1_o),
+        .div_op2_o(ex_div_op2_o),
+        .div_stop_i(ex_div_stop_i),
+        .div_res_i(ex_div_res_i),
+        .div_rem_i(ex_div_rem_i)
     );
 
     ex_ls u_ex_ls(
@@ -359,6 +402,7 @@ module openriscv (
         .stall_o(ctrl_stall_o),
 
         .excp_stallreq_i(excp_stallreq_o),
+
         .flush_o(ctrl_flush_o)
     );
 
@@ -403,7 +447,38 @@ module openriscv (
         .stallreq_o(excp_stallreq_o),
 
         .jump_req_o(excp_jump_req_o),
-        .jump_pc_o(excp_jump_pc_o)
+        .jump_pc_o(excp_jump_pc_o),
+
+        .mul_start_i(ex_mul_start_o),
+        .div_start_i(ex_div_start_o),
+        .mul_div_cancel_o(ex_mul_div_cancel_i)
+    );
+
+    mul u_mul(
+        .clk(clk),
+        .rst_n(rst_n),
+        .mul_start_i(ex_mul_start_o),
+        .mul_cancel_i(1'b0),
+        .mul_signed_i(ex_mul_signed_o),
+        .mul_op1_i(ex_mul_op1_o),
+        .mul_op2_i(ex_mul_op2_o),
+        .mul_stop_o(ex_mul_stop_i),
+        .mul_res_l_o(ex_mul_res_l_i),
+        .mul_res_h_o(ex_mul_res_h_i)
+    );
+
+    div u_div(
+        .clk(clk),
+        .rst_n(rst_n),
+        .div_start_i(ex_div_start_o),
+        .div_cancel_i(1'b0),
+        .div_op1_signed_i(ex_div_op1_signed_o),
+        .div_op2_signed_i(ex_div_op2_signed_o),
+        .div_op1_i(ex_div_op1_o),
+        .div_op2_i(ex_div_op2_o),
+        .div_stop_o(ex_div_stop_i),
+        .div_res_o(ex_div_res_i),
+        .div_rem_o(ex_div_rem_i)
     );
 
 endmodule

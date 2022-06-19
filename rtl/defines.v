@@ -11,13 +11,14 @@
 `define READ_ENABLE         1'b1            //读使能
 `define READ_DISABLE        1'b0            //读禁止
 `define EXCP_SYNC_ASSERT    2'b01           //同步异常
-`define EXCP_ASYNC_ASSERT   2'b10           //异步步异常
+`define EXCP_ASYNC_ASSERT_1   2'b10           //异步异常1
+`define EXCP_ASYNC_ASSERT_2   2'b11           //异步异常2
 
 //***********************
 //IDU信息总线宏定义
 //***********************
 
-`define DEC_INST_OP_WIDTH       3                           //DEC指令类型信息宽度
+`define DEC_INST_OP_WIDTH       4                           //DEC指令类型信息宽度
 `define DEC_INST_OP             `DEC_INST_OP_WIDTH-1:0      //DEC指令类型信息
 
 //R instruction decode bus
@@ -79,7 +80,7 @@
 `define DEC_S_INFO_BUS_WIDTH    `DEC_INST_S_SW+1           //S型指令译码信息宽度
 `define DEC_S_INFO_BUS          `DEC_S_INFO_BUS_WIDTH-1:0  //S型指令译码信息
 
-//B(RANCH) and J(UMP) instruction decode bus
+//J(UMP) instruction decode bus
 `define DEC_INST_J              `DEC_INST_OP_WIDTH'd6      //J型指令
 `define DEC_INST_J_JAL          `DEC_INST_OP_WIDTH         //JAL指令
 `define DEC_INST_J_JALR         `DEC_INST_J_JAL+1 
@@ -96,8 +97,22 @@
 `define DEC_INST_CSR_CSRRSI     `DEC_INST_CSR_CSRRWI+1
 `define DEC_INST_CSR_CSRRCI     `DEC_INST_CSR_CSRRSI+1
 
-`define DEC_CSR_INFO_BUS_WIDTH `DEC_INST_CSR_CSRRCI+1      //CSR型指令译码信息宽度
-`define DEC_CSR_INFO_BUS       `DEC_CSR_INFO_BUS_WIDTH-1:0 //CSR型指令译码信息
+`define DEC_CSR_INFO_BUS_WIDTH  `DEC_INST_CSR_CSRRCI+1      //CSR型指令译码信息宽度
+`define DEC_CSR_INFO_BUS        `DEC_CSR_INFO_BUS_WIDTH-1:0 //CSR型指令译码信息
+
+//MUL and DIV instruction
+`define DEC_INST_MD             `DEC_INST_OP_WIDTH'd8       //MD型指令
+`define DEC_INST_MD_MUL         `DEC_INST_OP_WIDTH
+`define DEC_INST_MD_MULH        `DEC_INST_MD_MUL+1
+`define DEC_INST_MD_MULHSU      `DEC_INST_MD_MULH+1
+`define DEC_INST_MD_MULHU       `DEC_INST_MD_MULHSU+1
+`define DEC_INST_MD_DIV         `DEC_INST_MD_MULHU+1
+`define DEC_INST_MD_DIVU        `DEC_INST_MD_DIV+1
+`define DEC_INST_MD_REM         `DEC_INST_MD_DIVU+1
+`define DEC_INST_MD_REMU        `DEC_INST_MD_REM+1
+
+`define DEC_MD_INFO_BUS_WIDTH   `DEC_INST_MD_REMU+1        //MD型指令译码信息宽度
+`define DEC_MD_INFO_BUS         `DEC_MD_INFO_BUS_WIDTH-1:0 //MD型指令译码信息
 
 //dec info bus
 `define DEC_INFO_BUS_WIDTH      `DEC_R_INFO_BUS_WIDTH       //选取最长宽度为DEC信息总线宽度

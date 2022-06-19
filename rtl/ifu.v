@@ -29,8 +29,12 @@ module ifu (
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             pc_r <= `CPU_RESET_ADDR;
-        end else if (excp_jump_req_i & !stall_i[0]) begin
-            pc_r <= excp_jump_pc_i + `REG_BUS_WIDTH'h4;        
+        end else if (excp_jump_req_i) begin
+            if (stall_i[0]) begin
+                pc_r <= excp_jump_pc_i;
+            end else begin
+                pc_r <= excp_jump_pc_i + `REG_BUS_WIDTH'h4;
+            end        
         end else if (jump_req_i & !stall_i[0]) begin
             pc_r <= jump_pc_i + `REG_BUS_WIDTH'h4;
         end else if (!stall_i[0]) begin

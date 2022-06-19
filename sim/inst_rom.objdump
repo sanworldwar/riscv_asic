@@ -7,7 +7,7 @@ Disassembly of section .text:
 00000000 <_start>:
    0:	305a5073          	csrwi	mtvec,20
    4:	30045073          	csrwi	mstatus,8
-   8:	00102083          	lw	ra,1(zero) # 1 <_start+0x1>
+   8:	02110133          	mul	sp,sp,ra
    c:	00000073          	ecall
   10:	00209863          	bne	ra,sp,20 <aa>
   14:	00416093          	ori	ra,sp,4

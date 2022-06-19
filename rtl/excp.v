@@ -22,11 +22,16 @@ module excp(
     output  wire    [`CSR_ADDR_BUS] csr_waddr_o     ,
 
     //to ctrl
-    output  wire                    stallreq_o      ,
+    output  wire    [3:0]           stallreq_o      ,
 
     //to ifu
     output  wire                    jump_req_o      ,
-    output  wire    [`REG_BUS]      jump_pc_o       
+    output  wire    [`REG_BUS]      jump_pc_o       ,
+
+    //from exu
+    input   wire                    mul_start_i     ,
+    input   wire                    div_start_i     ,
+    output  wire                    mul_div_cancel_o 
 );
 
     localparam IDLE = 3'd0;
@@ -50,22 +55,17 @@ module excp(
     end
 
     wire    timer_irq_en = timer_irq_i & csr_mstatus_i[3];
-    reg     [1:0]   int_type;
 
     always @(*) begin
         sys_nxstate = IDLE;
-        int_type = 2'b00;
         case (sys_state)
             IDLE: begin
                 if (timer_irq_en) begin
                     sys_nxstate = MEPC;
-                    int_type = `EXCP_ASYNC_ASSERT;  
                 end else if (inst_sys_ecall | inst_sys_ebreak) begin
                     sys_nxstate = MEPC;
-                    int_type = `EXCP_SYNC_ASSERT; 
                 end else if (inst_sys_mret) begin
                     sys_nxstate = MRET_MSTATUS;
-                    int_type = `EXCP_SYNC_ASSERT; 
                 end
             end
             MEPC: begin
@@ -103,6 +103,7 @@ module excp(
     reg     [`REG_BUS]      csr_wdata_r     ;
     reg     [`CSR_ADDR_BUS] csr_waddr_r     ;
     reg     [`REG_BUS]      csr_wdata_tmp   ;
+    reg     [1:0]   excp_type;
 
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
@@ -110,18 +111,31 @@ module excp(
             csr_waddr_r <= `CSR_ADDR_BUS_WIDTH'h0;
             csr_wdata_r <= `REG_BUS_WIDTH'h0;
             csr_wdata_tmp <= `REG_BUS_WIDTH'h0;
+            excp_type <= 2'b00;
         end else begin
             case (sys_state)
                 IDLE: begin
                     csr_we_r <= 1'b0;
                     csr_waddr_r <= `CSR_ADDR_BUS_WIDTH'h0;
                     csr_wdata_r <= `REG_BUS_WIDTH'h0;
-                    if (timer_irq_en) begin
-                        csr_wdata_tmp <= pc_i;
+                    if (timer_irq_en) begin                     
+                        if (mul_start_i | div_start_i) begin
+                            csr_wdata_tmp <= pc_i - `REG_BUS_WIDTH'd4;
+                            excp_type <= `EXCP_ASYNC_ASSERT_1;
+                        end else begin
+                            csr_wdata_tmp <= pc_i;
+                            excp_type <= `EXCP_ASYNC_ASSERT_2;
+                        end
+                                                
                     end else if (inst_sys_ecall | inst_sys_ebreak) begin
-                        csr_wdata_tmp <= pc_i+`REG_BUS_WIDTH'h4;                   
+                        csr_wdata_tmp <= pc_i+`REG_BUS_WIDTH'h4;  
+                        excp_type <= `EXCP_SYNC_ASSERT;                  
                     end else if (inst_sys_mret) begin
                         csr_wdata_tmp <= {csr_mstatus_i[31:8], 1'b1, csr_mstatus_i[6:4], csr_mstatus_i[3], csr_mstatus_i[2:0]};
+                        excp_type <= `EXCP_SYNC_ASSERT; 
+                    end else begin
+                        csr_wdata_tmp <= `REG_BUS_WIDTH'h0;
+                        excp_type <= 2'b00;
                     end
                 end
                 MEPC: begin
@@ -129,30 +143,35 @@ module excp(
                     csr_waddr_r <= `CSR_MEPC;
                     csr_wdata_r <= csr_wdata_tmp;
                     csr_wdata_tmp <= {csr_mstatus_i[31:8], csr_mstatus_i[3], csr_mstatus_i[6:4], 1'b0, csr_mstatus_i[2:0]};
+                    excp_type <= 2'b00;
                 end
                 MSTATUS: begin
                     csr_we_r <= 1'b1;
                     csr_waddr_r <= `CSR_MSTATUS;
                     csr_wdata_r <= csr_wdata_tmp;
-                    csr_wdata_tmp <= `REG_BUS_WIDTH'h0;                 
+                    csr_wdata_tmp <= `REG_BUS_WIDTH'h0;   
+                    excp_type <= 2'b00;              
                 end
                 MCAUSE: begin
                     csr_we_r <= 1'b1;
                     csr_waddr_r <= `CSR_MCAUSE;
                     csr_wdata_r <= cause;
                     csr_wdata_tmp <= `REG_BUS_WIDTH'h0;
+                    excp_type <= 2'b00;
                 end
                 MRET_MSTATUS: begin
                     csr_we_r <= 1'b1;
                     csr_waddr_r <= `CSR_MSTATUS;
                     csr_wdata_r <= csr_wdata_tmp;
                     csr_wdata_tmp <= `REG_BUS_WIDTH'h0; 
+                    excp_type <= 2'b00;
                 end
                 default: begin
                     csr_we_r <= 1'b0;
                     csr_waddr_r <= `CSR_ADDR_BUS_WIDTH'h0;
                     csr_wdata_r <= `REG_BUS_WIDTH'h0;
-                    csr_wdata_tmp <= `REG_BUS_WIDTH'h0;                    
+                    csr_wdata_tmp <= `REG_BUS_WIDTH'h0;
+                    excp_type <= 2'b00;                    
                 end
             endcase
         end
@@ -190,7 +209,11 @@ module excp(
     assign jump_req_o = jump_req_r;
     assign jump_pc_o = jump_pc_r;
 
-    assign stallreq_o = (sys_state != IDLE) | (sys_nxstate != IDLE);
+    assign stallreq_o[0] = (sys_state != IDLE) | (sys_nxstate != IDLE);
+    assign stallreq_o[1] = (excp_type == `EXCP_SYNC_ASSERT);
+    assign stallreq_o[2] = (excp_type == `EXCP_ASYNC_ASSERT_1);
+    assign stallreq_o[3] = (excp_type == `EXCP_ASYNC_ASSERT_2);
+
+    assign mul_div_cancel_o = stallreq_o[2];
 
 endmodule
-
