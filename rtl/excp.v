@@ -22,9 +22,10 @@ module excp(
     output  wire    [`CSR_ADDR_BUS] csr_waddr_o     ,
 
     //to ctrl
-    output  wire    [3:0]           stallreq_o      ,
+    output  wire                    stallreq_o      ,
+    output  wire    [2:0]           flushreq_o      ,
 
-    //to ifu
+    //to ifu(excp_jump_req_o also to ctrl)
     output  wire                    jump_req_o      ,
     output  wire    [`REG_BUS]      jump_pc_o       ,
 
@@ -62,9 +63,9 @@ module excp(
             IDLE: begin
                 if (timer_irq_en) begin
                     sys_nxstate = MEPC;
-                end else if (inst_sys_ecall | inst_sys_ebreak) begin
+                end else if ((inst_sys_ecall | inst_sys_ebreak) & !(mul_start_i | div_start_i)) begin
                     sys_nxstate = MEPC;
-                end else if (inst_sys_mret) begin
+                end else if (inst_sys_mret & !(mul_start_i | div_start_i)) begin
                     sys_nxstate = MRET_MSTATUS;
                 end
             end
@@ -127,10 +128,10 @@ module excp(
                             excp_type <= `EXCP_ASYNC_ASSERT_2;
                         end
                                                 
-                    end else if (inst_sys_ecall | inst_sys_ebreak) begin
+                    end else if ((inst_sys_ecall | inst_sys_ebreak) & !(mul_start_i | div_start_i)) begin
                         csr_wdata_tmp <= pc_i+`REG_BUS_WIDTH'h4;  
                         excp_type <= `EXCP_SYNC_ASSERT;                  
-                    end else if (inst_sys_mret) begin
+                    end else if ((inst_sys_mret) & !(mul_start_i | div_start_i)) begin
                         csr_wdata_tmp <= {csr_mstatus_i[31:8], 1'b1, csr_mstatus_i[6:4], csr_mstatus_i[3], csr_mstatus_i[2:0]};
                         excp_type <= `EXCP_SYNC_ASSERT; 
                     end else begin
@@ -209,11 +210,11 @@ module excp(
     assign jump_req_o = jump_req_r;
     assign jump_pc_o = jump_pc_r;
 
-    assign stallreq_o[0] = (sys_state != IDLE) | (sys_nxstate != IDLE);
-    assign stallreq_o[1] = (excp_type == `EXCP_SYNC_ASSERT);
-    assign stallreq_o[2] = (excp_type == `EXCP_ASYNC_ASSERT_1);
-    assign stallreq_o[3] = (excp_type == `EXCP_ASYNC_ASSERT_2);
+    assign stallreq_o = (sys_state != IDLE) | (sys_nxstate != IDLE);
+    assign flushreq_o[0] = (excp_type == `EXCP_SYNC_ASSERT);
+    assign flushreq_o[1] = (excp_type == `EXCP_ASYNC_ASSERT_1);
+    assign flushreq_o[2] = (excp_type == `EXCP_ASYNC_ASSERT_2);
 
-    assign mul_div_cancel_o = stallreq_o[2];
+    assign mul_div_cancel_o = flushreq_o[1];
 
 endmodule
