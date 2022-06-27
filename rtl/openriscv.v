@@ -161,7 +161,8 @@ module openriscv (
     wire    [`CSR_ADDR_BUS] excp_csr_waddr_o    ;
 
     //连接excp和ctrl信号
-    wire    [3:0]           excp_stallreq_o     ;
+    wire                    excp_stallreq_o     ;
+    wire    [2:0]           excp_flushreq_o     ;
 
     //连接excp和ifu地址跳转信号
     wire                    excp_jump_req_o   ;
@@ -402,6 +403,7 @@ module openriscv (
         .stall_o(ctrl_stall_o),
 
         .excp_stallreq_i(excp_stallreq_o),
+        .excp_flushreq_i(excp_flushreq_o),
 
         .flush_o(ctrl_flush_o)
     );
@@ -445,6 +447,7 @@ module openriscv (
         .csr_waddr_o(excp_csr_waddr_o),
 
         .stallreq_o(excp_stallreq_o),
+        .flushreq_o(excp_flushreq_o),
 
         .jump_req_o(excp_jump_req_o),
         .jump_pc_o(excp_jump_pc_o),
