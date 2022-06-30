@@ -194,3 +194,11 @@
 `define CSR_MIP     12'h344
 `define CSR_MSTATUS 12'h300
 `define CSR_MSCRATCH 12'h340
+
+//***********************
+//ahb bus 宏定义
+//***********************
+`define HADDR_BUS_WIDTH `REG_BUS_WIDTH
+`define HADDR_BUS       `HADDR_BUS_WIDTH-1:0
+`define HDATA_BUS_WIDTH `REG_BUS_WIDTH
+`define HDATA_BUS       `HDATA_BUS_WIDTH-1:0

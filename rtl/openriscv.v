@@ -4,24 +4,42 @@ module openriscv (
     input   wire    clk                 ,
     input   wire    rst_n               ,
 
-    input   wire    [31:0]  rom_inst_i  ,
-    output  wire    [31:0]  rom_pc_o    ,
+//    input   wire    [31:0]  rom_inst_i  ,
+//    output  wire    [31:0]  rom_pc_o    ,
 
     input   wire    [`MEM_DATA_BUS] ram_data_i      ,
     output  wire                    ram_re_o        ,
     output  wire    [`MEM_ADDR_BUS] ram_raddr_o     ,
     output  wire    [`MEM_DATA_BUS] ram_data_o      ,
     output  wire                    ram_we_o        ,
-    output  wire    [`MEM_ADDR_BUS] ram_waddr_o   
+    output  wire    [`MEM_ADDR_BUS] ram_waddr_o     ,
+
+    input   wire                    timer_irq_i     ,
+
+    output  wire                    mst_hsel_o      ,
+    output  wire    [1:0]           mst_htrans_o    ,
+    output  wire    [`HADDR_BUS]    mst_haddr_o     ,
+    output  wire    [`HDATA_BUS]    mst_hwdata_o    ,
+    input   wire    [`HDATA_BUS]    mst_hrdata_i    ,
+    output  wire                    mst_hwrite_o    ,
+    output  wire    [2:0]           mst_hsize_o     ,
+    output  wire    [2:0]           mst_hburst_o    ,
+    output  wire    [3:0]           mst_hprot_o     ,
+    output  wire                    mst_hmastlock_o ,
+    input   wire                    mst_hready_i    ,
+    output  wire                    mst_hresp_o 
 );
 
     //连接ifu和if_id的信号
-    wire    [`REG_BUS]  if_pc_o             ;
-    wire    [31:0]      if_inst_o           ;
+//    wire    [`REG_BUS]  if_pc_o             ;
+//    wire    [31:0]      if_inst_o           ;
  
     //连接ifu和rom的信号
-    wire    [31:0]  if_inst_i = rom_inst_i  ;
-    assign rom_pc_o = if_pc_o               ;
+//    wire    [31:0]  if_inst_i = rom_inst_i  ;
+//    assign rom_pc_o = if_pc_o               ;
+
+    //连接ifu和if_ahb_interface
+    wire    [`REG_BUS]  if_pc_o         ;
 
     //连接if_id和idu的信号
     wire    [`REG_BUS]  id_pc_i         ;
@@ -49,7 +67,7 @@ module openriscv (
     //连接idu和ctrl的信号
     wire                    id_stallreq_o   ;
 
-    //连接idu和ifu的地址跳转信号
+    //连接idu和ifu的地址跳转信号(id_jump_req_o also to ctrl)
     wire                    id_jump_req_o   ;
     wire    [`REG_BUS]      id_jump_pc_o    ;
 
@@ -86,9 +104,11 @@ module openriscv (
 
     //连接exu和ctrl的信号
     wire                ex_stallreq_o       ;
+
+    //连接exu和excp的信号    
     wire                ex_mul_div_cancel_i ;
 
-    //连接exu和mul的信号
+    //连接exu和mul的信号(mul_start_o also to excp)
     wire                ex_mul_start_o  ;
     wire                ex_mul_cancel_o ;
     wire                ex_mul_signed_o ;
@@ -98,7 +118,7 @@ module openriscv (
     wire    [`REG_BUS]  ex_mul_res_l_i  ;
     wire    [`REG_BUS]  ex_mul_res_h_i  ;       
 
-    //连接exu和div的信号    
+    //连接exu和div的信号(div_start_o also to excp)    
     wire                ex_div_start_o      ;
     wire                ex_div_cancel_o     ;
     wire                ex_div_op1_signed_o ;
@@ -145,11 +165,11 @@ module openriscv (
     wire    [`REG_BUS]      wb_rd_data_i    ;
     wire    [`REG_ADDR_BUS] wb_rd_addr_i    ; 
 
-    //连接ctrl和ifu, if_id, id_ex, ex_ls, ls_wb的停顿信号
+    //连接ctrl和if_ahb_interface, ifu, if_id, id_ex, ex_ls, ls_wb的停顿信号
     wire    [5:0]           ctrl_stall_o    ;
 
-    //连接ctrl和if_id, id_ex, ex_ls, ls_wb的冲刷信号
-    wire    [3:0]           ctrl_flush_o    ;
+    //连接ctrl和if_ahb_interface, if_id, id_ex, ex_ls, ls_wb的冲刷信号
+    wire    [4:0]           ctrl_flush_o    ;
 
     //连接excp和csr_regs信号
     wire    [`REG_BUS]      excp_csr_mtvec_i    ;
@@ -164,18 +184,26 @@ module openriscv (
     wire                    excp_stallreq_o     ;
     wire    [2:0]           excp_flushreq_o     ;
 
-    //连接excp和ifu地址跳转信号
+    //连接excp和ifu地址跳转信号(excp_jump_req_o also to ctrl)
     wire                    excp_jump_req_o   ;
     wire    [`REG_BUS]      excp_jump_pc_o    ;
+
+    //连接if_ahb_interface和if_id的信号
+    wire    [`REG_BUS]  if_ahb_pc_o         ;
+    wire    [31:0]      if_ahb_inst_o       ;
+
+    //连接if_ahb_interface和ctrl的信号
+    wire                if_ahb_stallreq_o   ;
+
 
     ifu u_ifu(
         .clk(clk),
         .rst_n(rst_n),
 
         .pc_o(if_pc_o),
-        .inst_o(if_inst_o),
+    //    .inst_o(if_inst_o),
 
-        .inst_i(if_inst_i),
+    //    .inst_i(if_inst_i),
 
         .stall_i(ctrl_stall_o),
 
@@ -190,8 +218,8 @@ module openriscv (
         .clk(clk),
         .rst_n(rst_n),
 
-        .pc_i(if_pc_o),
-        .inst_i(if_inst_o),
+        .pc_i(if_ahb_pc_o),
+        .inst_i(if_ahb_inst_o),
 
         .pc_o(id_pc_i),
         .inst_o(id_inst_i),
@@ -399,13 +427,18 @@ module openriscv (
 
     ctrl u_ctrl(
         .id_stallreq_i(id_stallreq_o),
+        .id_jump_req_i(id_jump_req_o),
+
         .ex_stallreq_i(ex_stallreq_o),
         .stall_o(ctrl_stall_o),
 
         .excp_stallreq_i(excp_stallreq_o),
         .excp_flushreq_i(excp_flushreq_o),
+        .excp_jump_req_i(excp_jump_req_o),
 
-        .flush_o(ctrl_flush_o)
+        .flush_o(ctrl_flush_o),
+
+        .if_ahb_stallreq_i(if_ahb_stallreq_o)
     );
 
     csr_regfile u_csr_regfile(
@@ -433,7 +466,7 @@ module openriscv (
         .clk(clk),
         .rst_n(rst_n),
 
-        .timer_irq_i(),
+        .timer_irq_i(timer_irq_i),
 
         .dec_sys_bus_i(id_dec_sys_bus_o),
         .pc_i(id_pc_o),
@@ -461,7 +494,7 @@ module openriscv (
         .clk(clk),
         .rst_n(rst_n),
         .mul_start_i(ex_mul_start_o),
-        .mul_cancel_i(1'b0),
+        .mul_cancel_i(ex_mul_cancel_o),
         .mul_signed_i(ex_mul_signed_o),
         .mul_op1_i(ex_mul_op1_o),
         .mul_op2_i(ex_mul_op2_o),
@@ -474,7 +507,7 @@ module openriscv (
         .clk(clk),
         .rst_n(rst_n),
         .div_start_i(ex_div_start_o),
-        .div_cancel_i(1'b0),
+        .div_cancel_i(ex_div_cancel_o),
         .div_op1_signed_i(ex_div_op1_signed_o),
         .div_op2_signed_i(ex_div_op2_signed_o),
         .div_op1_i(ex_div_op1_o),
@@ -482,6 +515,33 @@ module openriscv (
         .div_stop_o(ex_div_stop_i),
         .div_res_o(ex_div_res_i),
         .div_rem_o(ex_div_rem_i)
+    );
+
+    if_ahb_interface u_if_ahb_interface(
+        .clk(clk),
+        .rst_n(rst_n),
+
+        .pc_i(if_pc_o),
+
+        .pc_o(if_ahb_pc_o),
+        .inst_o(if_ahb_inst_o),
+
+        .stall_i(ctrl_stall_o),
+        .flush_i(ctrl_flush_o),
+        .stallreq_o(if_ahb_stallreq_o),
+
+        .mst_hsel_o(mst_hsel_o),
+        .mst_htrans_o(mst_htrans_o),
+        .mst_haddr_o(mst_haddr_o),
+        .mst_hwdata_o(mst_hwdata_o),
+        .mst_hrdata_i(mst_hrdata_i),
+        .mst_hwrite_o(),
+        .mst_hsize_o(mst_hsize_o),
+        .mst_hburst_o(mst_hburst_o),
+        .mst_hprot_o(mst_hprot_o),
+        .mst_hmastlock_o(mst_hmastlock_o),
+        .mst_hready_i(mst_hready_i),
+        .mst_hresp_o(mst_hresp_o)
     );
 
 endmodule

@@ -83,6 +83,8 @@ module div (
             div_res_rem <= `DOUBLE_REG_BUS_WIDTH'h0;
         end else if (div_shl & !div_stop_o & !div_cancel_i) begin
             div_res_rem <= {sub_nxt, div_res_rem[`REG_BUS_WIDTH-2:0], !sub_res[`REG_BUS_WIDTH-1]};
+        end else if (div_cancel_i) begin
+            div_res_rem <= `DOUBLE_REG_BUS_WIDTH'h0;
         end else if (div_start_i) begin
             if (|div_op2_i == 1'b0) begin
                 div_res_rem <= `DOUBLE_REG_BUS_WIDTH'h0;

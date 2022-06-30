@@ -40,7 +40,7 @@ module idu (
     //to ctrl
     output  wire                    stallreq_o      ,
 
-    //to ifu
+    //to ifu(id_jump_req_o also to ctrl)
     output  wire                    jump_req_o      ,
     output  wire    [`REG_BUS]      jump_pc_o       ,
 
@@ -335,7 +335,7 @@ module idu (
                                      ((rs1_data + pc_i) & {`REG_BUS_WIDTH{inst_j_jalr}}) |
                                      ((imm + pc_i) & {`REG_BUS_WIDTH{(inst_b_jump)}});
 
-    assign jump_req_o = (inst_b_jump | inst_j_op);
+    assign jump_req_o = (inst_b_jump | inst_j_op) & !stallreq_o;
     assign jump_pc_o = inst_bj_pc;
 
 endmodule

@@ -16,10 +16,10 @@ module ls_wb (
 
     //from ctrl
     input   wire    [5:0]           stall_i     ,
-    input   wire    [3:0]           flush_i     
+    input   wire    [4:0]           flush_i     
 );
     
-    wire    clr = (stall_i[4] & !stall_i[5]) | flush_i[3]; //访存暂停，而写回继续
+    wire    clr = (stall_i[4] & !stall_i[5]) | flush_i[4]; //访存暂停，而写回继续
     wire    load = !stall_i[4];
 
     wire    rd_we_r;

@@ -12,10 +12,10 @@ module if_id (
 
     //from ctrl
     input   wire    [5:0]       stall_i  ,
-    input   wire    [3:0]       flush_i  
+    input   wire    [4:0]       flush_i  
 );
 
-    wire    clr = (stall_i[1] & !stall_i[2]) | flush_i[0]; //取指暂停，而译码继续/冲刷取指
+    wire    clr = (stall_i[1] & !stall_i[2]) | flush_i[1]; //取指暂停，而译码继续/冲刷取指
     wire    load = !stall_i[1];
 
     wire    [`REG_BUS]  pc_r;

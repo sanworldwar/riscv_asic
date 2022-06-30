@@ -25,7 +25,7 @@ module ex_ls (
 
     //from ctrl
     input   wire    [5:0]           stall_i         ,
-    input   wire    [3:0]           flush_i         ,
+    input   wire    [4:0]           flush_i         ,
 
     //to csr_regfile
     output  wire                    csr_we_o        ,
@@ -33,7 +33,7 @@ module ex_ls (
     output  wire    [`CSR_ADDR_BUS] csr_waddr_o     
 );
     
-    wire    clr = (stall_i[3] & !stall_i[4]) | flush_i[2]; //执行暂停，而访存继续
+    wire    clr = (stall_i[3] & !stall_i[4]) | flush_i[3]; //执行暂停，而访存继续
     wire    load = !stall_i[3];
 
     wire    rd_we_r;

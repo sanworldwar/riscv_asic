@@ -63,9 +63,9 @@ module excp(
             IDLE: begin
                 if (timer_irq_en) begin
                     sys_nxstate = MEPC;
-                end else if (inst_sys_ecall | inst_sys_ebreak) begin // & !(mul_start_i | div_start_i)
+                end else if ((inst_sys_ecall | inst_sys_ebreak) & !(mul_start_i | div_start_i)) begin
                     sys_nxstate = MEPC;
-                end else if (inst_sys_mret) begin // & !(mul_start_i | div_start_i)
+                end else if ((inst_sys_mret) & !(mul_start_i | div_start_i)) begin
                     sys_nxstate = MRET_MSTATUS;
                 end
             end
@@ -128,10 +128,10 @@ module excp(
                             excp_type <= `EXCP_ASYNC_ASSERT_2;
                         end
                                                 
-                    end else if (inst_sys_ecall | inst_sys_ebreak) begin // & !(mul_start_i | div_start_i)
+                    end else if (inst_sys_ecall | inst_sys_ebreak) begin
                         csr_wdata_tmp <= pc_i+`REG_BUS_WIDTH'h4;  
                         excp_type <= `EXCP_SYNC_ASSERT;                  
-                    end else if (inst_sys_mret) begin // & !(mul_start_i | div_start_i)
+                    end else if (inst_sys_mret) begin
                         csr_wdata_tmp <= {csr_mstatus_i[31:8], 1'b1, csr_mstatus_i[6:4], csr_mstatus_i[3], csr_mstatus_i[2:0]};
                         excp_type <= `EXCP_SYNC_ASSERT; 
                     end else begin

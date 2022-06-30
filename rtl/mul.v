@@ -50,8 +50,6 @@ module mul (
             count <= 6'b000000;
         end else if (mul_shr & !mul_stop_o & !mul_cancel_i) begin
             count <= count + 1'b1;
-        end else if (mul_start_i) begin
-            count <= 6'b000000;
         end else begin
             count <= 6'b000000;
         end
@@ -68,6 +66,8 @@ module mul (
             mul_res_r <= `DOUBLE_REG_BUS_WIDTH'h0;
         end else if (mul_shr & !mul_stop_o & !mul_cancel_i) begin
             mul_res_r <= {add_res, mul_res_r[`REG_BUS_WIDTH-1:1]};
+        end else if (mul_cancel_i) begin
+            mul_res_r <= `DOUBLE_REG_BUS_WIDTH'h0;;
         end else if (mul_start_i) begin
             mul_res_r <= {`REG_BUS_WIDTH'h0, mul_op2_i};
         end        
