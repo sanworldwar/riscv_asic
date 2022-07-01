@@ -7,6 +7,8 @@ module openriscv_sopc_tb ();
     reg clk     ;
     reg rst_n   ;
 
+    reg timer_irq_i ;
+
     always #10 clk = ~clk;
 
     initial begin
@@ -24,13 +26,16 @@ module openriscv_sopc_tb ();
     initial begin
         clk = 1'b0;
         rst_n = 1'b0;
+        timer_irq_i = 1'b0;
         #100 rst_n = 1'b1;
         #2000 $finish;
     end
 
     openrisc_sopc u_openrisc_sopc(
         .clk(clk),
-        .rst_n(rst_n)
+        .rst_n(rst_n),
+
+        .timer_irq_i(timer_irq_i)
     );
 
     initial begin

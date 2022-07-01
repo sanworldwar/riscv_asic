@@ -18,13 +18,18 @@ module ctrl (
     output  wire    [4:0]   flush_o,
 
     //from if_ahb_interface
-    input   wire            if_ahb_stallreq_i          
+    input   wire            if_ahb_stallreq_i   ,
+
+    //from if_ahb_interface
+    input   wire            ls_ahb_stallreq_i   
+
 );
     //stall[0]暂停pc，stall[1]暂停取指，stall[2]暂停译码
     //stall[3]暂停执行，stall[4]暂停访存，stall[5]暂停写回
-    assign stall_o = ex_stallreq_i ? 6'b001111 :
-                     id_stallreq_i ? 6'b000111 : 
-                     excp_stallreq_i ? 6'b000111 : 
+    assign stall_o = ls_ahb_stallreq_i ? 6'b011111 :
+                     ex_stallreq_i     ? 6'b001111 :
+                     id_stallreq_i     ? 6'b000111 : 
+                     excp_stallreq_i   ? 6'b000111 : 
                      if_ahb_stallreq_i ? 6'b000011 : 6'b000000;
 
     assign flush_o = ({5{excp_flushreq_i[1]}} & 5'b00110) | 

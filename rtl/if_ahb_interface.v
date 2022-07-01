@@ -5,6 +5,7 @@ module if_ahb_interface (
     input   wire    rst_n   ,
 
     //from ifu
+    input   wire                ce_i        ,    
     input   wire    [`REG_BUS]  pc_i        ,
 
     //to idu
@@ -118,7 +119,7 @@ module if_ahb_interface (
             inst_r <= 32'h0;
         end
         else begin
-            mst_hsel_r <= 1'b1;
+            mst_hsel_r <= ce_i;
             mst_htrans_r <= HTRANS_NONSEQ;
             mst_hwrite_r <= 1'b0;
             mst_hsize_r <= 3'b010;
@@ -148,7 +149,7 @@ module if_ahb_interface (
                     end
                 end
                 WAIT: begin
-                    if (flush_i[0]) begin 
+                    if (flush_i[0]) begin //跳转时清零
                         mst_haddr_r <= pc_i;
                         pc_r <= `REG_BUS_WIDTH'h0;
                         inst_r <= 32'h0;

@@ -30,15 +30,8 @@ module openriscv (
     output  wire                    mst_hresp_o 
 );
 
-    //连接ifu和if_id的信号
-//    wire    [`REG_BUS]  if_pc_o             ;
-//    wire    [31:0]      if_inst_o           ;
- 
-    //连接ifu和rom的信号
-//    wire    [31:0]  if_inst_i = rom_inst_i  ;
-//    assign rom_pc_o = if_pc_o               ;
-
     //连接ifu和if_ahb_interface
+    wire                if_ce_o         ;
     wire    [`REG_BUS]  if_pc_o         ;
 
     //连接if_id和idu的信号
@@ -147,18 +140,11 @@ module openriscv (
     wire    [`REG_ADDR_BUS] ls_rd_addr_o   ;  
 
     //连接lsu和data ram的信号
-    wire    [`MEM_DATA_BUS] ls_mem_rdata_i = ram_data_i ;
-    wire                    ls_mem_re_o                 ;
-    wire    [`MEM_ADDR_BUS] ls_mem_raddr_o              ;
-    wire    [`MEM_DATA_BUS] ls_mem_wdata_o              ;
-    wire                    ls_mem_we_o                 ;
-    wire    [`MEM_ADDR_BUS] ls_mem_waddr_o              ;  
-
-    assign ram_re_o = ls_mem_re_o       ;
-    assign ram_raddr_o = ls_mem_raddr_o ;
-    assign ram_data_o = ls_mem_wdata_o  ;
-    assign ram_we_o = ls_mem_we_o       ;
-    assign ram_waddr_o = ls_mem_waddr_o ;
+    wire    [`MEM_DATA_BUS] ls_mem_rdata_i  ;
+    wire                    ls_mem_re_o     ;             ;
+    wire    [`MEM_DATA_BUS] ls_mem_wdata_o  ;
+    wire                    ls_mem_we_o     ;
+    wire    [`MEM_ADDR_BUS] ls_mem_addr_o   ;  
 
     //连接ls_wb和wb的信号
     wire                    wb_rd_we_i      ;
@@ -200,10 +186,8 @@ module openriscv (
         .clk(clk),
         .rst_n(rst_n),
 
+        .ce_o(if_ce_o),
         .pc_o(if_pc_o),
-    //    .inst_o(if_inst_o),
-
-    //    .inst_i(if_inst_i),
 
         .stall_i(ctrl_stall_o),
 
@@ -388,10 +372,9 @@ module openriscv (
 
         .mem_rdata_i(ls_mem_rdata_i),
         .mem_re_o(ls_mem_re_o),
-        .mem_raddr_o(ls_mem_raddr_o),
         .mem_wdata_o(ls_mem_wdata_o),
         .mem_we_o(ls_mem_we_o),
-        .mem_waddr_o(ls_mem_waddr_o)
+        .mem_addr_o(ls_mem_addr_o)
     );
 
     ls_wb u_ls_wb(
@@ -521,6 +504,7 @@ module openriscv (
         .clk(clk),
         .rst_n(rst_n),
 
+        .ce_i(if_ce_o),
         .pc_i(if_pc_o),
 
         .pc_o(if_ahb_pc_o),

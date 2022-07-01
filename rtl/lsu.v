@@ -15,12 +15,11 @@ module lsu (
     output  wire    [`REG_ADDR_BUS] rd_addr_o       ,
 
     //to data ram
-    input   wire    [`MEM_DATA_BUS] mem_rdata_i      ,
+    input   wire    [`MEM_DATA_BUS] mem_rdata_i     ,
     output  wire                    mem_re_o        ,
-    output  wire    [`MEM_ADDR_BUS] mem_raddr_o     ,
-    output  wire    [`MEM_DATA_BUS] mem_wdata_o      ,
+    output  wire    [`MEM_DATA_BUS] mem_wdata_o     ,
     output  wire                    mem_we_o        ,
-    output  wire    [`MEM_ADDR_BUS] mem_waddr_o     
+    output  wire    [`MEM_ADDR_BUS] mem_addr_o     
 );
     //L(OAD) instruction
     wire inst_l_op = exe_info_bus_i[`EXE_INST_OP] == `EXE_INST_L;
@@ -47,14 +46,10 @@ module lsu (
                 ({mem_rdata_i[`MEM_DATA_BUS_WIDTH-1:16],rd_mem_data_i[15:0]} & {`MEM_DATA_BUS_WIDTH{inst_s_sh & inst_s_op}})  |
                 (rd_mem_data_i & {`MEM_DATA_BUS_WIDTH{inst_s_sw & inst_s_op}});
 
-
-    assign mem_re_o = inst_l_op | inst_s_op;
-    assign mem_raddr_o = mem_addr_i;
-
-   
-    assign mem_waddr_o = mem_addr_i;
+    assign mem_re_o = inst_l_op | ((inst_s_sb | inst_s_sh) & inst_s_op);
     assign mem_we_o = inst_s_op;
     assign mem_wdata_o = inst_s_wdata;
+    assign mem_addr_o = mem_addr_i;    
 
     assign rd_we_o = rd_we_i | inst_l_op;
     assign rd_data_o = inst_l_op ? inst_l_rdata : rd_mem_data_i;
