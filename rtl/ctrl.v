@@ -22,7 +22,6 @@ module ctrl (
 
     //from ls_ahb_interface
     input   wire            ls_ahb_stallreq_i   
-
 );
     //stall[0]暂停pc，stall[1]暂停取指，stall[2]暂停译码
     //stall[3]暂停执行，stall[4]暂停访存，stall[5]暂停写回

@@ -53,6 +53,7 @@ module ls_ahb_interface (
     localparam IDLE = 2'b00;
     localparam READ = 2'b01;
     localparam WRITE = 2'b10;
+    localparam READ_WAIT = 2'b11;
 
 
     reg [1:0]   state, next_state;
@@ -75,22 +76,29 @@ module ls_ahb_interface (
                 end
             end 
             READ: begin
-                if (mst_hready_i & !stall_i[4]) begin
+                if (mst_hready_i) begin
                     if (we_i) begin
-                        next_state = WRITE;
+                        next_state = WRITE;                            
                     end else begin
-                        next_state = IDLE;                       
-                    end
+                        next_state = READ_WAIT;
+                    end                       
                 end else begin
                     next_state = READ;
                 end
             end
             WRITE: begin
-                if (mst_hready_i & !stall_i[4]) begin
+                if (mst_hready_i & !stall_i[4]) begin //stall_i[4]由外部和内部一起控制
                     next_state = IDLE;
                 end else begin
                     next_state = WRITE;
                 end
+            end
+            READ_WAIT: begin
+                if (!stall_i[4]) begin
+                    next_state = IDLE;
+                end else begin
+                    next_state = READ_WAIT;
+                end                
             end
         endcase
     end
@@ -125,7 +133,7 @@ module ls_ahb_interface (
                     end
                 end
                 READ: begin
-                    if (mst_hready_i & !stall_i[4] & we_i) begin
+                    if (mst_hready_i & we_i) begin
                         mst_hwdata_r <= wdata_i;
                     end else begin
                         mst_hwdata_r <= `HDATA_BUS_WIDTH'h0;
@@ -135,7 +143,10 @@ module ls_ahb_interface (
                     if (mst_hready_i & !stall_i[4]) begin
                         mst_hwdata_r <= `HDATA_BUS_WIDTH'h0;
                     end                   
-                end 
+                end
+                READ_WAIT: begin
+                    mst_hwdata_r <= `HDATA_BUS_WIDTH'h0;
+                end
             endcase                            
         end
     end
@@ -156,15 +167,14 @@ module ls_ahb_interface (
             rdata_r <= `MEM_DATA_BUS_WIDTH'h0;
         end else if ((state == READ) & mst_hready_i) begin
             rdata_r <= mst_hrdata_i;
-        end else begin
-            rdata_r <= `MEM_DATA_BUS_WIDTH'h0;
         end
     end
 
     assign rdata_o = rdata_r;
     //assign rdata_o = mst_hready_i ? mst_hrdata_i : `MEM_DATA_BUS_WIDTH'h0; //== mst_hready_i&mst_hrdata_i
 
-    assign stallreq_o = ((state == IDLE) & (next_state != IDLE)) | !mst_hready_i | 
-                        ((state == READ) & (next_state != READ));
+    assign stallreq_o = ((state == IDLE) & ((next_state == READ) | (next_state == WRITE))) | 
+                        !mst_hready_i | 
+                        ((state == READ) & ((next_state == WRITE) | (next_state == READ_WAIT)));
     
 endmodule

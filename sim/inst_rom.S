@@ -1,6 +1,7 @@
     .org 0x0
     .global _start;
 
+
 _start:
     addi x1, x0, 0x00000030
     csrrw x0, mtvec, x1

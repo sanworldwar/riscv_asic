@@ -431,7 +431,7 @@ module openriscv (
 
         .if_ahb_stallreq_i(if_ahb_stallreq_o),
 
-        .ls_ahb_stallreq_i(ls_ahb_stallreq_o)        
+        .ls_ahb_stallreq_i(ls_ahb_stallreq_o)//ls_ahb_stallreq_o        
     );
 
     csr_regfile u_csr_regfile(
