@@ -4,30 +4,36 @@ module openriscv (
     input   wire    clk                 ,
     input   wire    rst_n               ,
 
-//    input   wire    [31:0]  rom_inst_i  ,
-//    output  wire    [31:0]  rom_pc_o    ,
-
-    input   wire    [`MEM_DATA_BUS] ram_data_i      ,
-    output  wire                    ram_re_o        ,
-    output  wire    [`MEM_ADDR_BUS] ram_raddr_o     ,
-    output  wire    [`MEM_DATA_BUS] ram_data_o      ,
-    output  wire                    ram_we_o        ,
-    output  wire    [`MEM_ADDR_BUS] ram_waddr_o     ,
-
+    //外部计时器中断
     input   wire                    timer_irq_i     ,
 
-    output  wire                    mst_hsel_o      ,
-    output  wire    [1:0]           mst_htrans_o    ,
-    output  wire    [`HADDR_BUS]    mst_haddr_o     ,
-    output  wire    [`HDATA_BUS]    mst_hwdata_o    ,
-    input   wire    [`HDATA_BUS]    mst_hrdata_i    ,
-    output  wire                    mst_hwrite_o    ,
-    output  wire    [2:0]           mst_hsize_o     ,
-    output  wire    [2:0]           mst_hburst_o    ,
-    output  wire    [3:0]           mst_hprot_o     ,
-    output  wire                    mst_hmastlock_o ,
-    input   wire                    mst_hready_i    ,
-    output  wire                    mst_hresp_o 
+    //if_ahb_interface信号
+    output  wire                    if_mst_hsel_o      ,
+    output  wire    [1:0]           if_mst_htrans_o    ,
+    output  wire    [`HADDR_BUS]    if_mst_haddr_o     ,
+    output  wire    [`HDATA_BUS]    if_mst_hwdata_o    ,
+    input   wire    [`HDATA_BUS]    if_mst_hrdata_i    ,
+    output  wire                    if_mst_hwrite_o    ,
+    output  wire    [2:0]           if_mst_hsize_o     ,
+    output  wire    [2:0]           if_mst_hburst_o    ,
+    output  wire    [3:0]           if_mst_hprot_o     ,
+    output  wire                    if_mst_hmastlock_o ,
+    input   wire                    if_mst_hready_i    ,
+    output  wire                    if_mst_hresp_o     ,
+
+    //ls_ahb_interface信号
+    output  wire                    ls_mst_hsel_o      ,
+    output  wire    [1:0]           ls_mst_htrans_o    ,
+    output  wire    [`HADDR_BUS]    ls_mst_haddr_o     ,
+    output  wire    [`HDATA_BUS]    ls_mst_hwdata_o    ,
+    input   wire    [`HDATA_BUS]    ls_mst_hrdata_i    ,
+    output  wire                    ls_mst_hwrite_o    ,
+    output  wire    [2:0]           ls_mst_hsize_o     ,
+    output  wire    [2:0]           ls_mst_hburst_o    ,
+    output  wire    [3:0]           ls_mst_hprot_o     ,
+    output  wire                    ls_mst_hmastlock_o ,
+    input   wire                    ls_mst_hready_i    ,
+    output  wire                    ls_mst_hresp_o     
 );
 
     //连接ifu和if_ahb_interface
@@ -139,7 +145,7 @@ module openriscv (
     wire    [`REG_BUS]      ls_rd_data_o   ;
     wire    [`REG_ADDR_BUS] ls_rd_addr_o   ;  
 
-    //连接lsu和data ram的信号
+    //连接lsu和ls_ahb_interface的信号
     wire    [`MEM_DATA_BUS] ls_mem_rdata_i  ;
     wire                    ls_mem_re_o     ;             ;
     wire    [`MEM_DATA_BUS] ls_mem_wdata_o  ;
@@ -154,7 +160,7 @@ module openriscv (
     //连接ctrl和if_ahb_interface, ifu, if_id, id_ex, ex_ls, ls_wb的停顿信号
     wire    [5:0]           ctrl_stall_o    ;
 
-    //连接ctrl和if_ahb_interface, if_id, id_ex, ex_ls, ls_wb的冲刷信号
+    //连接ctrl和if_ahb_interface, if_id, id_ex, ex_ls, ls_ahb_interface, ls_wb的冲刷信号
     wire    [4:0]           ctrl_flush_o    ;
 
     //连接excp和csr_regs信号
@@ -181,6 +187,8 @@ module openriscv (
     //连接if_ahb_interface和ctrl的信号
     wire                if_ahb_stallreq_o   ;
 
+    //连接ls_ahb_interface和ctrl的信号
+    wire                ls_ahb_stallreq_o   ;
 
     ifu u_ifu(
         .clk(clk),
@@ -421,7 +429,9 @@ module openriscv (
 
         .flush_o(ctrl_flush_o),
 
-        .if_ahb_stallreq_i(if_ahb_stallreq_o)
+        .if_ahb_stallreq_i(if_ahb_stallreq_o),
+
+        .ls_ahb_stallreq_i(ls_ahb_stallreq_o)        
     );
 
     csr_regfile u_csr_regfile(
@@ -514,18 +524,45 @@ module openriscv (
         .flush_i(ctrl_flush_o),
         .stallreq_o(if_ahb_stallreq_o),
 
-        .mst_hsel_o(mst_hsel_o),
-        .mst_htrans_o(mst_htrans_o),
-        .mst_haddr_o(mst_haddr_o),
-        .mst_hwdata_o(mst_hwdata_o),
-        .mst_hrdata_i(mst_hrdata_i),
-        .mst_hwrite_o(),
-        .mst_hsize_o(mst_hsize_o),
-        .mst_hburst_o(mst_hburst_o),
-        .mst_hprot_o(mst_hprot_o),
-        .mst_hmastlock_o(mst_hmastlock_o),
-        .mst_hready_i(mst_hready_i),
-        .mst_hresp_o(mst_hresp_o)
+        .mst_hsel_o(if_mst_hsel_o),
+        .mst_htrans_o(if_mst_htrans_o),
+        .mst_haddr_o(if_mst_haddr_o),
+        .mst_hwdata_o(if_mst_hwdata_o),
+        .mst_hrdata_i(if_mst_hrdata_i),
+        .mst_hwrite_o(if_mst_hwrite_o),
+        .mst_hsize_o(if_mst_hsize_o),
+        .mst_hburst_o(if_mst_hburst_o),
+        .mst_hprot_o(if_mst_hprot_o),
+        .mst_hmastlock_o(if_mst_hmastlock_o),
+        .mst_hready_i(if_mst_hready_i),
+        .mst_hresp_o(if_mst_hresp_o)
+    );
+
+    ls_ahb_interface u_ls_ahb_interface(
+        .clk(clk),
+        .rst_n(rst_n),
+
+        .rdata_o(ls_mem_rdata_i),
+        .re_i(ls_mem_re_o),
+        .wdata_i(ls_mem_wdata_o),
+        .we_i(ls_mem_we_o),
+        .addr_i(ls_mem_addr_o),
+
+        .stall_i(ctrl_stall_o),
+        .stallreq_o(ls_ahb_stallreq_o),
+
+        .mst_hsel_o(ls_mst_hsel_o),
+        .mst_htrans_o(ls_mst_htrans_o),
+        .mst_haddr_o(ls_mst_haddr_o),
+        .mst_hwdata_o(ls_mst_hwdata_o),
+        .mst_hrdata_i(ls_mst_hrdata_i),
+        .mst_hwrite_o(ls_mst_hwrite_o),
+        .mst_hsize_o(ls_mst_hsize_o),
+        .mst_hburst_o(ls_mst_hburst_o),
+        .mst_hprot_o(ls_mst_hprot_o),
+        .mst_hmastlock_o(ls_mst_hmastlock_o),
+        .mst_hready_i(ls_mst_hready_i),
+        .mst_hresp_o(ls_mst_hresp_o)
     );
 
 endmodule

@@ -14,13 +14,13 @@ module ctrl (
     input   wire    [2:0]   excp_flushreq_i ,
     input   wire            excp_jump_req_i ,    
 
-    //to if_ahb_interface if_id, id_ex, ex_ls, ls_wb
+    //to if_ahb_interface if_id, id_ex, ex_ls, ls_ahb_interface, ls_wb
     output  wire    [4:0]   flush_o,
 
     //from if_ahb_interface
     input   wire            if_ahb_stallreq_i   ,
 
-    //from if_ahb_interface
+    //from ls_ahb_interface
     input   wire            ls_ahb_stallreq_i   
 
 );

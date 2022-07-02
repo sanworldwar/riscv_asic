@@ -1,6 +1,6 @@
 `include "defines.v"
 
-module if_ahb_interface (
+module ls_ahb_interface (
     input   wire    clk     ,
     input   wire    rst_n   ,
 
@@ -150,8 +150,21 @@ module if_ahb_interface (
     assign mst_hprot_o = mst_hprot_r;
     assign mst_hmastlock_o = mst_hmastlock_r;
 
-    assign rdata_o = mst_hready_i ? mst_hrdata_i : `MEM_DATA_BUS_WIDTH'h0; //== mst_hready_i&mst_hrdata_i
+    reg    [`MEM_DATA_BUS] rdata_r;
+    always @(posedge clk or negedge rst_n) begin
+        if(!rst_n) begin
+            rdata_r <= `MEM_DATA_BUS_WIDTH'h0;
+        end else if ((state == READ) & mst_hready_i) begin
+            rdata_r <= mst_hrdata_i;
+        end else begin
+            rdata_r <= `MEM_DATA_BUS_WIDTH'h0;
+        end
+    end
 
-    assign stallreq_o = ((state == IDLE) & (next_state != IDLE)) | !mst_hready_i | ((state == READ) & (next_state == WRITE));
+    assign rdata_o = rdata_r;
+    //assign rdata_o = mst_hready_i ? mst_hrdata_i : `MEM_DATA_BUS_WIDTH'h0; //== mst_hready_i&mst_hrdata_i
+
+    assign stallreq_o = ((state == IDLE) & (next_state != IDLE)) | !mst_hready_i | 
+                        ((state == READ) & (next_state != READ));
     
 endmodule

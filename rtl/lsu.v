@@ -14,7 +14,7 @@ module lsu (
     output  wire    [`REG_BUS]      rd_data_o       ,
     output  wire    [`REG_ADDR_BUS] rd_addr_o       ,
 
-    //to data ram
+    //to ls_ahb_interface
     input   wire    [`MEM_DATA_BUS] mem_rdata_i     ,
     output  wire                    mem_re_o        ,
     output  wire    [`MEM_DATA_BUS] mem_wdata_o     ,
