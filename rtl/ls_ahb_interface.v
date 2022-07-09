@@ -65,6 +65,12 @@ module ls_ahb_interface (
         end
     end
 
+    //读：IDLE->READ->READ_WAIT->IDLE
+    //写：IDLE->WRITE->IDLE
+    //读后写：IDLE->READ->WRITE->IDLE
+    //IDLE和READ不受停顿影响,
+    //READ->READ_WAIT和READ->WRITE均打一个拍子使读入数据暂存一个周期，优化时序(READ->WRITE是必须的)
+    //因为rd_we_o和rd_addr_o不能被修改，无法使用流水线地址形式
     always @(*) begin
         next_state = IDLE;
         case (state)       

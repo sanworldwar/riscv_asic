@@ -64,7 +64,20 @@ module if_ahb_interface (
             state <= next_state;
         end
     end
-    //复位开始，正常情况，普通停顿，jal， excp， div-jal， div-excp，irq-jal
+    //复位开始，IDLE->START->RUN
+    //正常情况，RUN->RUN(包括mst_hready_i引起的停顿)
+    //普通停顿，RUN->WAIT(mst_hready_i有效后再转移状态，否则RUN->RUN)，数据暂存到inst_r
+    //jal， RUN->START->RUN
+    //excp， RUN->WAIT->START->RUN(mst_hready_i有效后再转移状态，否则RUN->START->RUN)，
+    //      即使跳转时mst_hready_i有效也不影响，stall_i[0]无效
+    //div-jal，jal将在div结束后跳转，div时，不会产生flush，RUN->WAIT->START->RUN
+    //div-irq，(div结果与irq同时发生或div结果慢irq一个时钟，div结果均能输出)，RUN->WAIT->START->RUN，
+    //         (mst_hready_i有效后再转移状态，否则RUN->START->RUN，若flush_i与mst_hready_i同时有效，stall_i必不有效) 
+    //div-ecall/ebreak，div时，ecall/ebreak不会进行，不会产生excp_jump_req，不会产生flush，RUN->WAIT->START->RUN，
+    //         (mst_hready_i有效后再转移状态，否则RUN->START->RUN，若flush_i与mst_hready_i同时有效，stall_i必不有效) 
+    //irq与jal同时，优先响应irq，irq发生时，jal不会使flush_i[0]有效，即使让flush_i[0]有效，WAIT时idu会被jal清零
+    //          但是如果mst_hready_i不有效，会提前进入状态START(虽然结果没影响)，RUN->WAIT->START->RUN
+    //         (mst_hready_i有效后再转移状态，否则RUN->START->RUN，若flush_i与mst_hready_i同时有效，stall_i必不有效)
     always @(*) begin
         next_state = IDLE;
         case (state)
@@ -75,7 +88,7 @@ module if_ahb_interface (
                 next_state = RUN;
             end
             RUN: begin
-                if (stall_i[0] & mst_hready_i) begin
+                if (stall_i[0] & mst_hready_i) begin //irq与jal同时，优先响应irq
                     next_state = WAIT;
                 end else if (flush_i[0]) begin
                     next_state = START;
@@ -84,7 +97,7 @@ module if_ahb_interface (
                 end
             end
             WAIT: begin
-                if (flush_i[0]) begin //针对excp，跳转优先，div-irq div优先(irq在结束时发生)，
+                if (flush_i[0]) begin //针对excp，flush_i[0]与!stall_i[0]同时成立，跳转优先
                     next_state = START;
                 end else if (!stall_i[0]) begin
                     next_state = RUN;
@@ -138,7 +151,7 @@ module if_ahb_interface (
                     inst_r <= 32'h0;
                 end
                 RUN: begin
-                    if (stall_i[0] & mst_hready_i) begin   //irq-jal优先响应irq
+                    if (stall_i[0] & mst_hready_i) begin
                         inst_r <= mst_hrdata_i;
                     end else if (flush_i[0]) begin //跳转比hready优先级高
                         mst_haddr_r <= pc_i;
@@ -149,7 +162,7 @@ module if_ahb_interface (
                     end
                 end
                 WAIT: begin
-                    if (flush_i[0]) begin //跳转时清零
+                    if (flush_i[0]) begin //跳转时内部寄存器清零
                         mst_haddr_r <= pc_i;
                         pc_r <= `REG_BUS_WIDTH'h0;
                         inst_r <= 32'h0;

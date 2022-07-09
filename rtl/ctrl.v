@@ -34,7 +34,7 @@ module ctrl (
     assign flush_o = ({5{excp_flushreq_i[1]}} & 5'b00110) | 
                      ({5{excp_flushreq_i[2]}} & 5'b00010) |
                      ({5{excp_flushreq_i[0]}} & 5'b00010) |
-                     ({5{excp_jump_req_i | (id_jump_req_i & !ex_stallreq_i)}} & 5'b00011); //跳转时清除if_id输出,
-                     //00001 div-beq成立，但beq-jal不成立
+                     ({5{excp_jump_req_i | (id_jump_req_i & (!ex_stallreq_i | !excp_stallreq_i))}} & 5'b00011); //跳转时清除if_id输出,
+                     //div-beq成立且div-jal成立，irq和jar同时发生成立
 
 endmodule  //ctrl
