@@ -31,7 +31,7 @@ inst_rom.objdump: $(OBJECTS)
 	$(OBJDUMP) -d $< > $@
 
 sim:
-	iverilog -s openriscv_sopc_tb -o out.vvp -I ../rtl/ ../rtl/*.v ./*.v
+	iverilog -s openriscv_sopc_tb -o out.vvp -I ../rtl/core ../rtl/core/*.v ./*.v
 	vvp out.vvp 
 	gtkwave openriscv_sopc_tb.vcd 
 

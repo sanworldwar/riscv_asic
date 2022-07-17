@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-`include "../rtl/defines.v"
+`include "../rtl/core/defines.v"
 
 module openriscv_sopc_tb ();
     

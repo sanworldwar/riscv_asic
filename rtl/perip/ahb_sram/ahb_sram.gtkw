@@ -1,0 +1,62 @@
+[*]
+[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
+[*] Sun Jul 17 14:29:58 2022
+[*]
+[dumpfile] "/home/fxr/rsic-v/rtl/perip/ahb_sram/ahb_sram_tb.vcd"
+[dumpfile_mtime] "Sun Jul 17 14:24:40 2022"
+[dumpfile_size] 6839
+[savefile] "/home/fxr/rsic-v/rtl/perip/ahb_sram/ahb_sram.gtkw"
+[timestart] 0
+[size] 1846 902
+[pos] -39 -39
+*-5.000000 60 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] ahb_sram_tb.
+[sst_width] 233
+[signals_width] 288
+[sst_expanded] 1
+[sst_vpaned_height] 249
+@28
+ahb_sram_tb.u_ahb_sram.hclk
+ahb_sram_tb.u_ahb_sram.sram_clk
+ahb_sram_tb.u_ahb_sram.hresetn
+ahb_sram_tb.u_ahb_sram.sram_cs
+ahb_sram_tb.u_ahb_sram.hsel_i
+@22
+ahb_sram_tb.u_ahb_sram.haddr_i[31:0]
+ahb_sram_tb.u_ahb_sram.hwdata_i[31:0]
+@28
+ahb_sram_tb.u_ahb_sram.hburst_i[2:0]
+ahb_sram_tb.u_ahb_sram.hsize_i[2:0]
+ahb_sram_tb.u_ahb_sram.htrans_i[1:0]
+ahb_sram_tb.u_ahb_sram.hwrite_i
+ahb_sram_tb.u_ahb_sram.hready_i
+ahb_sram_tb.u_ahb_sram.hreadyout_o
+ahb_sram_tb.u_ahb_sram.hresp_o[1:0]
+@23
+ahb_sram_tb.u_ahb_sram.haddr_r[31:0]
+@28
+ahb_sram_tb.u_ahb_sram.hburst_r[2:0]
+ahb_sram_tb.u_ahb_sram.hsize_r[2:0]
+ahb_sram_tb.u_ahb_sram.htrans_r[1:0]
+ahb_sram_tb.u_ahb_sram.hwrite_r
+@22
+ahb_sram_tb.u_ahb_sram.bank0_csn[3:0]
+ahb_sram_tb.u_ahb_sram.bank1_csn[3:0]
+ahb_sram_tb.u_ahb_sram.bank_csn[3:0]
+ahb_sram_tb.u_ahb_sram.hrdata_o[31:0]
+ahb_sram_tb.u_ahb_sram.sram_addr[12:0]
+ahb_sram_tb.u_ahb_sram.sram_bank0_rdata[31:0]
+ahb_sram_tb.u_ahb_sram.sram_bank1_rdata[31:0]
+@28
+ahb_sram_tb.u_ahb_sram.sram_bank_sel
+@22
+ahb_sram_tb.u_ahb_sram.sram_rdata[31:0]
+@28
+ahb_sram_tb.u_ahb_sram.sram_read
+@22
+ahb_sram_tb.u_ahb_sram.sram_wdata[31:0]
+@28
+ahb_sram_tb.u_ahb_sram.sram_wen
+ahb_sram_tb.u_ahb_sram.sram_write
+[pattern_trace] 1
+[pattern_trace] 0

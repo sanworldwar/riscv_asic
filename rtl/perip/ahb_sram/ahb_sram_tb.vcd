@@ -1,0 +1,800 @@
+$date
+	Sun Jul 17 22:55:31 2022
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module ahb_sram_tb $end
+$scope module u_ahb_sram $end
+$var wire 32 ! haddr_i [31:0] $end
+$var wire 3 " hburst_i [2:0] $end
+$var wire 1 # hclk $end
+$var wire 32 $ hrdata_o [31:0] $end
+$var wire 1 % hready_i $end
+$var wire 1 & hreadyout_o $end
+$var wire 1 ' hresetn $end
+$var wire 2 ( hresp_o [1:0] $end
+$var wire 1 ) hsel_i $end
+$var wire 3 * hsize_i [2:0] $end
+$var wire 2 + htrans_i [1:0] $end
+$var wire 32 , hwdata_i [31:0] $end
+$var wire 1 - hwrite_i $end
+$var wire 1 . sram_clk $end
+$var wire 1 / sram_cs $end
+$var wire 1 0 sram_read $end
+$var wire 32 1 sram_wdata [31:0] $end
+$var wire 1 2 sram_write $end
+$var wire 1 3 sram_wen $end
+$var wire 32 4 sram_rdata [31:0] $end
+$var wire 1 5 sram_bank_sel $end
+$var wire 32 6 sram_bank1_rdata [31:0] $end
+$var wire 32 7 sram_bank0_rdata [31:0] $end
+$var wire 13 8 sram_addr [12:0] $end
+$var wire 4 9 bank1_csn [3:0] $end
+$var wire 4 : bank0_csn [3:0] $end
+$var reg 4 ; bank_csn [3:0] $end
+$var reg 32 < haddr_r [31:0] $end
+$var reg 3 = hburst_r [2:0] $end
+$var reg 3 > hsize_r [2:0] $end
+$var reg 2 ? htrans_r [1:0] $end
+$var reg 1 @ hwrite_r $end
+$scope begin bank0[0] $end
+$scope module u_sram_8kx8 $end
+$var wire 13 A addr_i [12:0] $end
+$var wire 1 B cen_i $end
+$var wire 1 . clk $end
+$var wire 8 C data_i [7:0] $end
+$var wire 1 3 wen_i $end
+$var wire 8 D data_o [7:0] $end
+$var reg 8 E data_r [7:0] $end
+$upscope $end
+$upscope $end
+$scope begin bank0[1] $end
+$scope module u_sram_8kx8 $end
+$var wire 13 F addr_i [12:0] $end
+$var wire 1 G cen_i $end
+$var wire 1 . clk $end
+$var wire 8 H data_i [7:0] $end
+$var wire 1 3 wen_i $end
+$var wire 8 I data_o [7:0] $end
+$var reg 8 J data_r [7:0] $end
+$upscope $end
+$upscope $end
+$scope begin bank0[2] $end
+$scope module u_sram_8kx8 $end
+$var wire 13 K addr_i [12:0] $end
+$var wire 1 L cen_i $end
+$var wire 1 . clk $end
+$var wire 8 M data_i [7:0] $end
+$var wire 1 3 wen_i $end
+$var wire 8 N data_o [7:0] $end
+$var reg 8 O data_r [7:0] $end
+$upscope $end
+$upscope $end
+$scope begin bank0[3] $end
+$scope module u_sram_8kx8 $end
+$var wire 13 P addr_i [12:0] $end
+$var wire 1 Q cen_i $end
+$var wire 1 . clk $end
+$var wire 8 R data_i [7:0] $end
+$var wire 1 3 wen_i $end
+$var wire 8 S data_o [7:0] $end
+$var reg 8 T data_r [7:0] $end
+$upscope $end
+$upscope $end
+$scope begin bank1[0] $end
+$scope module u_sram_8kx8 $end
+$var wire 13 U addr_i [12:0] $end
+$var wire 1 V cen_i $end
+$var wire 1 . clk $end
+$var wire 8 W data_i [7:0] $end
+$var wire 1 3 wen_i $end
+$var wire 8 X data_o [7:0] $end
+$var reg 8 Y data_r [7:0] $end
+$upscope $end
+$upscope $end
+$scope begin bank1[1] $end
+$scope module u_sram_8kx8 $end
+$var wire 13 Z addr_i [12:0] $end
+$var wire 1 [ cen_i $end
+$var wire 1 . clk $end
+$var wire 8 \ data_i [7:0] $end
+$var wire 1 3 wen_i $end
+$var wire 8 ] data_o [7:0] $end
+$var reg 8 ^ data_r [7:0] $end
+$upscope $end
+$upscope $end
+$scope begin bank1[2] $end
+$scope module u_sram_8kx8 $end
+$var wire 13 _ addr_i [12:0] $end
+$var wire 1 ` cen_i $end
+$var wire 1 . clk $end
+$var wire 8 a data_i [7:0] $end
+$var wire 1 3 wen_i $end
+$var wire 8 b data_o [7:0] $end
+$var reg 8 c data_r [7:0] $end
+$upscope $end
+$upscope $end
+$scope begin bank1[3] $end
+$scope module u_sram_8kx8 $end
+$var wire 13 d addr_i [12:0] $end
+$var wire 1 e cen_i $end
+$var wire 1 . clk $end
+$var wire 8 f data_i [7:0] $end
+$var wire 1 3 wen_i $end
+$var wire 8 g data_o [7:0] $end
+$var reg 8 h data_r [7:0] $end
+$upscope $end
+$upscope $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+#0
+$dumpvars
+bx h
+bx g
+b0 f
+0e
+b0 d
+bx c
+bx b
+b0 a
+0`
+b0 _
+bx ^
+bx ]
+b0 \
+0[
+b0 Z
+bx Y
+bx X
+b0 W
+1V
+b0 U
+bx T
+bx S
+b0 R
+1Q
+b0 P
+bx O
+bx N
+b0 M
+1L
+b0 K
+bx J
+bx I
+b0 H
+1G
+b0 F
+bx E
+bx D
+b0 C
+1B
+b0 A
+0@
+b0 ?
+b0 >
+b0 =
+b0 <
+b1 ;
+b1111 :
+b1 9
+b0 8
+bx 7
+bx 6
+05
+bx 4
+13
+02
+b0 1
+10
+1/
+1.
+0-
+b0 ,
+b0 +
+b0 *
+0)
+b0 (
+0'
+1&
+1%
+bx $
+0#
+b0 "
+b0 !
+$end
+#10
+1'
+0.
+1#
+#20
+1.
+0#
+#30
+0.
+1#
+#40
+1.
+0#
+#50
+b10 +
+b10 *
+1-
+1)
+0.
+1#
+#60
+1.
+0#
+#70
+b100100 X
+b100100 Y
+b110101 ]
+b110101 ^
+b10101 b
+b10101 c
+b10010000101010011010100100100 6
+b10010 g
+b10010 h
+0V
+b0 9
+b0 ;
+00
+03
+12
+b100100 C
+b110101 H
+b10101 M
+b10010 R
+b100100 W
+b110101 \
+b10101 a
+b10010 f
+b10 ?
+b10 >
+1@
+b100 !
+b10010000101010011010100100100 1
+b10010000101010011010100100100 ,
+0.
+1#
+#80
+1.
+0#
+#90
+b10000001 X
+b10000001 Y
+b1011110 ]
+b1011110 ^
+b10001001 b
+b10001001 c
+b11000000100010010101111010000001 6
+b11000000 g
+b11000000 h
+b1 8
+b1 A
+b1 F
+b1 K
+b1 P
+b1 U
+b1 Z
+b1 _
+b1 d
+b0 ;
+b10000001 C
+b1011110 H
+b10001001 M
+b11000000 R
+b10000001 W
+b1011110 \
+b10001001 a
+b11000000 f
+b100 <
+b1000 !
+b11000000100010010101111010000001 1
+b11000000100010010101111010000001 ,
+0.
+1#
+#100
+1.
+0#
+#110
+b1001 X
+b1001 Y
+b11010110 ]
+b11010110 ^
+b10000100 b
+b10000100 c
+b10000100100001001101011000001001 6
+b10000100 g
+b10000100 h
+b10 8
+b10 A
+b10 F
+b10 K
+b10 P
+b10 U
+b10 Z
+b10 _
+b10 d
+b0 ;
+b1001 C
+b11010110 H
+b10000100 M
+b10000100 R
+b1001 W
+b11010110 \
+b10000100 a
+b10000100 f
+b1000 <
+b1100 !
+b10000100100001001101011000001001 1
+b10000100100001001101011000001001 ,
+0.
+1#
+#120
+1.
+0#
+#130
+b1100011 X
+b1100011 Y
+b1010110 ]
+b1010110 ^
+b11110000 b
+b11110000 c
+b10110001111100000101011001100011 6
+b10110001 g
+b10110001 h
+b11 8
+b11 A
+b11 F
+b11 K
+b11 P
+b11 U
+b11 Z
+b11 _
+b11 d
+b0 ;
+b1100011 C
+b1010110 H
+b11110000 M
+b10110001 R
+b1100011 W
+b1010110 \
+b11110000 a
+b10110001 f
+b1100 <
+b10000 !
+b10110001111100000101011001100011 1
+b10110001111100000101011001100011 ,
+0.
+1#
+#140
+1.
+0#
+#150
+b1101 X
+b1101 Y
+b1111011 ]
+b1111011 ^
+b10111001 b
+b10111001 c
+b110101110010111101100001101 6
+b110 g
+b110 h
+b100 8
+b100 A
+b100 F
+b100 K
+b100 P
+b100 U
+b100 Z
+b100 _
+b100 d
+b0 ;
+b1101 C
+b1111011 H
+b10111001 M
+b110 R
+b1101 W
+b1111011 \
+b10111001 a
+b110 f
+b10000 <
+0-
+b0 !
+b110101110010111101100001101 1
+b110101110010111101100001101 ,
+0.
+1#
+#160
+1.
+0#
+#170
+b100100 X
+b100100 Y
+b110101 ]
+b110101 ^
+b10101 b
+b10101 c
+b10010000101010011010100100100 6
+b10010 g
+b10010 h
+b0 8
+b0 A
+b0 F
+b0 K
+b0 P
+b0 U
+b0 Z
+b0 _
+b0 d
+b0 ;
+10
+13
+02
+b0 <
+0@
+b100 !
+0.
+1#
+#180
+1.
+0#
+#190
+b10000001 X
+b10000001 Y
+b1011110 ]
+b1011110 ^
+b10001001 b
+b10001001 c
+b11000000100010010101111010000001 6
+b11000000 g
+b11000000 h
+b1 8
+b1 A
+b1 F
+b1 K
+b1 P
+b1 U
+b1 Z
+b1 _
+b1 d
+b0 ;
+b100 <
+b1000 !
+0.
+1#
+#200
+1.
+0#
+#210
+b1001 X
+b1001 Y
+b11010110 ]
+b11010110 ^
+b10000100 b
+b10000100 c
+b10000100100001001101011000001001 6
+b10000100 g
+b10000100 h
+b10 8
+b10 A
+b10 F
+b10 K
+b10 P
+b10 U
+b10 Z
+b10 _
+b10 d
+b0 ;
+b1000 <
+b1100 !
+0.
+1#
+#220
+1.
+0#
+#230
+b1100011 X
+b1100011 Y
+b1010110 ]
+b1010110 ^
+b11110000 b
+b11110000 c
+b10110001111100000101011001100011 6
+b10110001 g
+b10110001 h
+b11 8
+b11 A
+b11 F
+b11 K
+b11 P
+b11 U
+b11 Z
+b11 _
+b11 d
+b0 ;
+b1100 <
+b10000 !
+0.
+1#
+#240
+1.
+0#
+#250
+b1101 X
+b1101 Y
+b1111011 ]
+b1111011 ^
+b10111001 b
+b10111001 c
+b110101110010111101100001101 6
+b110 g
+b110 h
+b100 8
+b100 A
+b100 F
+b100 K
+b100 P
+b100 U
+b100 Z
+b100 _
+b100 d
+b0 ;
+b10000 <
+b10100 !
+0.
+1#
+#260
+1.
+0#
+#270
+bx X
+bx Y
+bx ]
+bx ^
+bx b
+bx c
+bx 6
+bx g
+bx h
+b101 8
+b101 A
+b101 F
+b101 K
+b101 P
+b101 U
+b101 Z
+b101 _
+b101 d
+b0 ;
+b10100 <
+0.
+1#
+#280
+1.
+0#
+#290
+0.
+1#
+#300
+1.
+0#
+#310
+0.
+1#
+#320
+1.
+0#
+#330
+0.
+1#
+#340
+1.
+0#
+#350
+0.
+1#
+#360
+1.
+0#
+#370
+0.
+1#
+#380
+1.
+0#
+#390
+0.
+1#
+#400
+1.
+0#
+#410
+0.
+1#
+#420
+1.
+0#
+#430
+0.
+1#
+#440
+1.
+0#
+#450
+0.
+1#
+#460
+1.
+0#
+#470
+0.
+1#
+#480
+1.
+0#
+#490
+0.
+1#
+#500
+1.
+0#
+#510
+0.
+1#
+#520
+1.
+0#
+#530
+0.
+1#
+#540
+1.
+0#
+#550
+0.
+1#
+#560
+1.
+0#
+#570
+0.
+1#
+#580
+1.
+0#
+#590
+0.
+1#
+#600
+1.
+0#
+#610
+0.
+1#
+#620
+1.
+0#
+#630
+0.
+1#
+#640
+1.
+0#
+#650
+0.
+1#
+#660
+1.
+0#
+#670
+0.
+1#
+#680
+1.
+0#
+#690
+0.
+1#
+#700
+1.
+0#
+#710
+0.
+1#
+#720
+1.
+0#
+#730
+0.
+1#
+#740
+1.
+0#
+#750
+0.
+1#
+#760
+1.
+0#
+#770
+0.
+1#
+#780
+1.
+0#
+#790
+0.
+1#
+#800
+1.
+0#
+#810
+0.
+1#
+#820
+1.
+0#
+#830
+0.
+1#
+#840
+1.
+0#
+#850
+0.
+1#
+#860
+1.
+0#
+#870
+0.
+1#
+#880
+1.
+0#
+#890
+0.
+1#
+#900
+1.
+0#
+#910
+0.
+1#
+#920
+1.
+0#
+#930
+0.
+1#
+#940
+1.
+0#
+#950
+0.
+1#
+#960
+1.
+0#
+#970
+0.
+1#
+#980
+1.
+0#
+#990
+0.
+1#
+#1000
+1.
+0#
+#1010
+0.
+1#

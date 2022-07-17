@@ -20,15 +20,16 @@ module ls_ahb_interface (
     output  wire    [1:0]           mst_htrans_o    ,
     output  wire    [`HADDR_BUS]    mst_haddr_o     ,
     output  wire    [`HDATA_BUS]    mst_hwdata_o    ,
-    input   wire    [`HDATA_BUS]    mst_hrdata_i    ,
     output  wire                    mst_hwrite_o    ,
     output  wire    [2:0]           mst_hsize_o     ,
     output  wire    [2:0]           mst_hburst_o    ,
     output  wire    [3:0]           mst_hprot_o     ,
     output  wire                    mst_hmastlock_o ,
+  //output  wire                    mst_priority    ,
+
     input   wire                    mst_hready_i    ,
-    output  wire                    mst_hresp_o       
-  //output  wire                    mst_priority
+    input   wire                    mst_hresp_o     ,
+    input   wire    [`HDATA_BUS]    mst_hrdata_i    
 );
 
     //HTRANS
