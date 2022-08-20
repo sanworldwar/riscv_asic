@@ -1,6 +1,7 @@
-`include "../../core/defines.v"
-
-module ahb_sram (
+module ahb_sram #(
+    parameter  AWIDTH = 32,   
+    parameter  DWIDTH = 32    
+)(
     input   wire                    hclk        ,
     input   wire                    sram_clk    ,
     input   wire    		        hresetn     ,
@@ -11,12 +12,12 @@ module ahb_sram (
     input   wire    [2:0]  	        hsize_i     ,
     input   wire    [2:0]  	        hburst_i    ,
     input   wire    [1:0]  	        htrans_i    ,
-    input   wire    [`HDATA_BUS] 	hwdata_i    ,
-    input   wire    [`HADDR_BUS] 	haddr_i     ,	
+    input   wire    [DWIDTH-1:0] 	hwdata_i    ,
+    input   wire    [AWIDTH-1:0] 	haddr_i     ,	
     
     output  wire                    hreadyout_o ,
-    output  wire    [1:0]           hresp_o     ,
-    output  wire    [`HDATA_BUS]    hrdata_o    
+    output  wire                    hresp_o     ,
+    output  wire    [DWIDTH-1:0]    hrdata_o    
 );
 
     //HTRANS
@@ -35,7 +36,7 @@ module ahb_sram (
     reg [2:0]           hsize_r     ;
     reg [2:0]           hburst_r    ;
     reg [1:0]           htrans_r    ;
-    reg [`HADDR_BUS] 	haddr_r     ;
+    reg [AWIDTH-1:0] 	haddr_r     ;
 
     always @(posedge hclk or negedge hresetn) begin
         if(!hresetn) begin
@@ -43,7 +44,7 @@ module ahb_sram (
             hsize_r <= 3'b000;
             hburst_r <= 3'b000;
             htrans_r <= 2'b00;
-            haddr_r <= `HADDR_BUS_WIDTH'h0;
+            haddr_r <= {AWIDTH{1'b0}};
         end else if (hsel_i && hready_i) begin
             hwrite_r <= hwrite_i;
             hsize_r <= hsize_i;
@@ -55,12 +56,12 @@ module ahb_sram (
             hsize_r <= 3'b000;
             hburst_r <= 3'b000;
             htrans_r <= 2'b00;
-            haddr_r <= `HADDR_BUS_WIDTH'h0;            
+            haddr_r <= {AWIDTH{1'b0}};            
         end
     end
 
     assign hreadyout_o = 1'b1; //sram一直有效
-    assign hresp_o = 2'b00; //ok
+    assign hresp_o = 1'b0; //ok
 
     wire    sram_cs = (hburst_r == HBURSTS_SINGLE) || (htrans_r == HTRANS_NONSEQ);
     wire    sram_read = sram_cs && !hwrite_r;
@@ -68,15 +69,15 @@ module ahb_sram (
     wire    sram_wen = !sram_write;
 
     wire    sram_bank_sel = haddr_r[15] ? 1'b1 : 1'b0; //sram_bank_sel = 1'b1 select bank1
-    wire    [`HDATA_BUS]    sram_wdata = hwdata_i;
+    wire    [DWIDTH-1:0]    sram_wdata = hwdata_i;
 
-    wire    [`HDATA_BUS]    sram_bank0_rdata;
-    wire    [`HDATA_BUS]    sram_bank1_rdata;
-    wire    [`HDATA_BUS]    sram_rdata = sram_bank_sel ? sram_bank1_rdata : sram_bank0_rdata;
+    wire    [DWIDTH-1:0]    sram_bank0_rdata;
+    wire    [DWIDTH-1:0]    sram_bank1_rdata;
+    wire    [DWIDTH-1:0]    sram_rdata = sram_bank_sel ? sram_bank1_rdata : sram_bank0_rdata;
 
     assign hrdata_o = sram_rdata;
 
-    wire    [12:0]  sram_addr = haddr_r[`HADDR_BUS_WIDTH-1:2]; //sram_addr=haddr/4
+    wire    [12:0]  sram_addr = haddr_r[AWIDTH-1:2]; //sram_addr=haddr/4
 
     reg [3:0]   bank_csn;
     always @(*) begin
@@ -115,7 +116,7 @@ module ahb_sram (
     wire    [3:0]   bank1_csn = (sram_cs && !sram_bank_sel) ? bank_csn : 4'b1111;
 
     genvar i;
-    for (i=0; i<4; i=i+1) begin: bank0
+    for (i=0; i<4; i=i+1) begin: bank0 //DWIDTH/8
         sram_8kx8 u_sram_8kx8(
             .clk(sram_clk),
             .cen_i(bank0_csn[i]),

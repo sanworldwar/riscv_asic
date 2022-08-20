@@ -8,32 +8,34 @@ module openriscv (
     input   wire                    timer_irq_i     ,
 
     //if_ahb_interface信号
-    output  wire                    if_mst_hsel_o      ,
-    output  wire    [1:0]           if_mst_htrans_o    ,
-    output  wire    [`HADDR_BUS]    if_mst_haddr_o     ,
-    output  wire    [`HDATA_BUS]    if_mst_hwdata_o    ,
-    input   wire    [`HDATA_BUS]    if_mst_hrdata_i    ,
-    output  wire                    if_mst_hwrite_o    ,
-    output  wire    [2:0]           if_mst_hsize_o     ,
-    output  wire    [2:0]           if_mst_hburst_o    ,
-    output  wire    [3:0]           if_mst_hprot_o     ,
-    output  wire                    if_mst_hmastlock_o ,
-    input   wire                    if_mst_hready_i    ,
-    output  wire                    if_mst_hresp_o     ,
+    output  wire                    if_mst_hsel_o       ,
+    output  wire    [1:0]           if_mst_htrans_o     ,
+    output  wire    [`HADDR_BUS]    if_mst_haddr_o      ,
+    output  wire    [`HDATA_BUS]    if_mst_hwdata_o     ,
+    output  wire                    if_mst_hwrite_o     ,
+    output  wire    [2:0]           if_mst_hsize_o      ,
+    output  wire    [2:0]           if_mst_hburst_o     ,
+    output  wire    [3:0]           if_mst_hprot_o      ,
+    output  wire                    if_mst_hmastlock_o  ,
+    output  wire                    if_mst_priority_o   ,   
+    input   wire                    if_mst_hready_i     ,
+    input   wire                    if_mst_hresp_i      ,
+    input   wire    [`HDATA_BUS]    if_mst_hrdata_i     ,    
 
     //ls_ahb_interface信号
-    output  wire                    ls_mst_hsel_o      ,
-    output  wire    [1:0]           ls_mst_htrans_o    ,
-    output  wire    [`HADDR_BUS]    ls_mst_haddr_o     ,
-    output  wire    [`HDATA_BUS]    ls_mst_hwdata_o    ,
-    input   wire    [`HDATA_BUS]    ls_mst_hrdata_i    ,
-    output  wire                    ls_mst_hwrite_o    ,
-    output  wire    [2:0]           ls_mst_hsize_o     ,
-    output  wire    [2:0]           ls_mst_hburst_o    ,
-    output  wire    [3:0]           ls_mst_hprot_o     ,
-    output  wire                    ls_mst_hmastlock_o ,
-    input   wire                    ls_mst_hready_i    ,
-    output  wire                    ls_mst_hresp_o     
+    output  wire                    ls_mst_hsel_o       ,
+    output  wire    [1:0]           ls_mst_htrans_o     ,
+    output  wire    [`HADDR_BUS]    ls_mst_haddr_o      ,
+    output  wire    [`HDATA_BUS]    ls_mst_hwdata_o     ,
+    output  wire                    ls_mst_hwrite_o     ,
+    output  wire    [2:0]           ls_mst_hsize_o      ,
+    output  wire    [2:0]           ls_mst_hburst_o     ,
+    output  wire    [3:0]           ls_mst_hprot_o      ,
+    output  wire                    ls_mst_hmastlock_o  ,
+    output  wire                    ls_mst_priority_o   ,     
+    input   wire                    ls_mst_hready_i     ,
+    input   wire                    ls_mst_hresp_i      ,
+    input   wire    [`HDATA_BUS]    ls_mst_hrdata_i       
 );
 
     //连接ifu和if_ahb_interface
@@ -528,14 +530,16 @@ module openriscv (
         .mst_htrans_o(if_mst_htrans_o),
         .mst_haddr_o(if_mst_haddr_o),
         .mst_hwdata_o(if_mst_hwdata_o),
-        .mst_hrdata_i(if_mst_hrdata_i),
         .mst_hwrite_o(if_mst_hwrite_o),
         .mst_hsize_o(if_mst_hsize_o),
         .mst_hburst_o(if_mst_hburst_o),
         .mst_hprot_o(if_mst_hprot_o),
         .mst_hmastlock_o(if_mst_hmastlock_o),
+        .mst_priority_o(if_mst_priority_o),
+
         .mst_hready_i(if_mst_hready_i),
-        .mst_hresp_o(if_mst_hresp_o)
+        .mst_hresp_i(if_mst_hresp_i),
+        .mst_hrdata_i(if_mst_hrdata_i)
     );
 
     ls_ahb_interface u_ls_ahb_interface(
@@ -555,14 +559,16 @@ module openriscv (
         .mst_htrans_o(ls_mst_htrans_o),
         .mst_haddr_o(ls_mst_haddr_o),
         .mst_hwdata_o(ls_mst_hwdata_o),
-        .mst_hrdata_i(ls_mst_hrdata_i),
         .mst_hwrite_o(ls_mst_hwrite_o),
         .mst_hsize_o(ls_mst_hsize_o),
         .mst_hburst_o(ls_mst_hburst_o),
         .mst_hprot_o(ls_mst_hprot_o),
         .mst_hmastlock_o(ls_mst_hmastlock_o),
+        .mst_priority_o(ls_mst_priority_o),
+
         .mst_hready_i(ls_mst_hready_i),
-        .mst_hresp_o(ls_mst_hresp_o)
+        .mst_hresp_i(ls_mst_hresp_i),
+        .mst_hrdata_i(ls_mst_hrdata_i)        
     );
 
 endmodule

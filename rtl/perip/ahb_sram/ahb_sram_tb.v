@@ -1,5 +1,3 @@
-`include "../../core/defines.v"
-
 module ahb_sram_tb ();
     reg                     hclk        ;
     reg                     sram_clk    ;
@@ -11,12 +9,12 @@ module ahb_sram_tb ();
     reg    [2:0]  	        hsize_i     ;
     reg    [2:0]  	        hburst_i    ;
     reg    [1:0]  	        htrans_i    ;
-    reg    [`HDATA_BUS] 	hwdata_i    ;
-    reg    [`HADDR_BUS] 	haddr_i     ;	
+    reg    [31:0] 	hwdata_i    ;
+    reg    [31:0] 	haddr_i     ;	
     
     wire                    hreadyout_o ;
     wire    [1:0]           hresp_o     ;
-    wire    [`HDATA_BUS]    hrdata_o    ; 
+    wire    [31:0]    hrdata_o    ; 
 
     always #10 hclk = ~hclk;
     always @ (*) sram_clk = ~hclk;
@@ -30,8 +28,8 @@ module ahb_sram_tb ();
         hsize_i <= 3'b000;
         hburst_i <= 3'b000;
         htrans_i <= 2'b00;
-        hwdata_i <= `HDATA_BUS_WIDTH'h0;
-        haddr_i <= `HADDR_BUS_WIDTH'h0;
+        hwdata_i <= 32'h0;
+        haddr_i <= 32'h0;
         #10 hresetn <= 1'b1;
         #1000 $finish;
     end
@@ -48,17 +46,17 @@ module ahb_sram_tb ();
         hsize_i <= 3'b010;
         hburst_i <= 3'b000; //SINGLE
         htrans_i <= 2'b10; //NONSEQ 
-        haddr_i <= `HADDR_BUS_WIDTH'h0;       
+        haddr_i <= 32'h0;       
         repeat (5) begin
             #20
             hwdata_i <= $random;
-            haddr_i <= haddr_i + `HADDR_BUS_WIDTH'h4;
+            haddr_i <= haddr_i + 32'h4;
         end
-        haddr_i <= `HADDR_BUS_WIDTH'h0;
+        haddr_i <= 32'h0;
         hwrite_i <= 1'b0;
         repeat (5) begin
             #20
-            haddr_i <= haddr_i + `HADDR_BUS_WIDTH'h4;
+            haddr_i <= haddr_i + 32'h4;
         end        
     end
 

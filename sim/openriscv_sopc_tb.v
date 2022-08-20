@@ -7,20 +7,30 @@ module openriscv_sopc_tb ();
     reg clk     ;
     reg rst_n   ;
 
+    reg sram_clk    ;
+
     reg timer_irq_i ;
 
     always #10 clk = ~clk;
+    always @ (*) sram_clk = ~clk;
 
     initial begin
-        $readmemh("inst_rom.data", u_openrisc_sopc.u_inst_rom.inst_mem);
+        $readmemh("inst_rom1.data", u_openrisc_sopc.u1_ahb_sram.bank0[0].u_sram_8kx8.mem);
+        $readmemh("inst_rom2.data", u_openrisc_sopc.u1_ahb_sram.bank0[1].u_sram_8kx8.mem);
+        $readmemh("inst_rom3.data", u_openrisc_sopc.u1_ahb_sram.bank0[2].u_sram_8kx8.mem);
+        $readmemh("inst_rom4.data", u_openrisc_sopc.u1_ahb_sram.bank0[3].u_sram_8kx8.mem);
     end
+
 
     initial begin
         $readmemh("regs.data", u_openrisc_sopc.u_openriscv.u_regfile.gpr_regs);
     end
 
     initial begin
-        $readmemh("data_ram.data", u_openrisc_sopc.u_data_ram.data_mem);
+        $readmemh("data_ram1.data", u_openrisc_sopc.u2_ahb_sram.bank0[0].u_sram_8kx8.mem);
+        $readmemh("data_ram2.data", u_openrisc_sopc.u2_ahb_sram.bank0[1].u_sram_8kx8.mem);
+        $readmemh("data_ram3.data", u_openrisc_sopc.u2_ahb_sram.bank0[2].u_sram_8kx8.mem);
+        $readmemh("data_ram4.data", u_openrisc_sopc.u2_ahb_sram.bank0[3].u_sram_8kx8.mem);
     end
 
     initial begin

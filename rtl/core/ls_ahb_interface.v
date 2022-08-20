@@ -25,10 +25,10 @@ module ls_ahb_interface (
     output  wire    [2:0]           mst_hburst_o    ,
     output  wire    [3:0]           mst_hprot_o     ,
     output  wire                    mst_hmastlock_o ,
-  //output  wire                    mst_priority    ,
+    output  wire                    mst_priority_o  ,
 
     input   wire                    mst_hready_i    ,
-    input   wire                    mst_hresp_o     ,
+    input   wire                    mst_hresp_i     ,
     input   wire    [`HDATA_BUS]    mst_hrdata_i    
 );
 
@@ -167,6 +167,7 @@ module ls_ahb_interface (
     assign mst_hburst_o = mst_hburst_r;
     assign mst_hprot_o = mst_hprot_r;
     assign mst_hmastlock_o = mst_hmastlock_r;
+    assign mst_priority_o = 1'b0;
 
     reg    [`MEM_DATA_BUS] rdata_r;
     always @(posedge clk or negedge rst_n) begin
