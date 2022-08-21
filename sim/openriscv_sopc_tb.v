@@ -12,7 +12,7 @@ module openriscv_sopc_tb ();
     reg timer_irq_i ;
 
     always #10 clk = ~clk;
-    always @ (*) sram_clk = ~clk;
+    always #10 sram_clk = ~sram_clk;
 
     initial begin
         $readmemh("inst_rom1.data", u_openrisc_sopc.u1_ahb_sram.bank0[0].u_sram_8kx8.mem);
@@ -36,6 +36,7 @@ module openriscv_sopc_tb ();
     initial begin
         clk = 1'b0;
         rst_n = 1'b0;
+        sram_clk = 1'b1;
         timer_irq_i = 1'b0;
         #100 rst_n = 1'b1;
         #2000 $finish;
@@ -44,6 +45,8 @@ module openriscv_sopc_tb ();
     openrisc_sopc u_openrisc_sopc(
         .clk(clk),
         .rst_n(rst_n),
+
+        .sram_clk(sram_clk),
 
         .timer_irq_i(timer_irq_i)
     );

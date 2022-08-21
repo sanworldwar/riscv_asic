@@ -112,8 +112,8 @@ module ahb_sram #(
         endcase
     end
 
-    wire    [3:0]   bank0_csn = (sram_cs && sram_bank_sel) ? bank_csn : 4'b1111;
-    wire    [3:0]   bank1_csn = (sram_cs && !sram_bank_sel) ? bank_csn : 4'b1111;
+    wire    [3:0]   bank0_csn = (sram_cs && !sram_bank_sel) ? bank_csn : 4'b1111;
+    wire    [3:0]   bank1_csn = (sram_cs && sram_bank_sel) ? bank_csn : 4'b1111;
 
     genvar i;
     for (i=0; i<4; i=i+1) begin: bank0 //DWIDTH/8

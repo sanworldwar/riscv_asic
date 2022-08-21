@@ -32,9 +32,9 @@ module sram_8kx8 #(
     always @(*) begin
         if (!cen_i) begin
             if (!wen_i) begin
-                data_r <= data_i;   
+                data_r = data_i;   
             end else begin
-                data_r <= mem[addr_i];
+                data_r = mem[addr_i];
             end
         end
     end

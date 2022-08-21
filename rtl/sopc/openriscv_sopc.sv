@@ -21,7 +21,7 @@ module openrisc_sopc (
     wire                    if_mst_priority_o   ;   
     wire                    if_mst_hready_i     ;
     wire                    if_mst_hresp_i      ;
-    wire                    if_mst_hrdata_i     ;
+    wire    [`HDATA_BUS]    if_mst_hrdata_i     ;
 
     //ls_ahb_interface信号与AHB的信号
     wire                    ls_mst_hsel_o       ;
@@ -92,9 +92,10 @@ module openrisc_sopc (
     assign mst_hprot_o[0] = if_mst_hprot_o;
     assign mst_hmastlock_o[0] = if_mst_hmastlock_o;
     assign mst_priority_o[0] = if_mst_priority_o;
-    assign mst_hready_i[0] = if_mst_hready_i;
-    assign mst_hresp_i[0] = if_mst_hresp_i;
-    assign mst_hrdata_i[0] = if_mst_hrdata_i;
+    assign if_mst_hready_i = mst_hready_i[0];
+    assign if_mst_hresp_i = mst_hresp_i[0];
+    assign if_mst_hrdata_i = mst_hrdata_i[0];
+
 
     assign mst_hsel_o[1] = ls_mst_hsel_o;
     assign mst_htrans_o[1] = ls_mst_htrans_o;
@@ -106,9 +107,9 @@ module openrisc_sopc (
     assign mst_hprot_o[1] = ls_mst_hprot_o;
     assign mst_hmastlock_o[1] = ls_mst_hmastlock_o;
     assign mst_priority_o[1] = ls_mst_priority_o;
-    assign mst_hready_i[1] = ls_mst_hready_i;
-    assign mst_hresp_i[1] = ls_mst_hresp_i;
-    assign mst_hrdata_i[1] = ls_mst_hrdata_i;
+    assign ls_mst_hready_i = mst_hready_i[1];
+    assign ls_mst_hresp_i = mst_hresp_i[1];
+    assign ls_mst_hrdata_i = mst_hrdata_i[1];
 
     wire    [`HADDR_BUS]    slv_addr_mask   [2];
     wire    [`HADDR_BUS]    slv_addr_base   [2];
@@ -124,30 +125,30 @@ module openrisc_sopc (
     wire                    slv_hresp_o     [2];
     wire    [`HDATA_BUS]    slv_hrdata_o    [2];
 
-    assign slv_addr_mask[0] = 32'h10000000;
-    assign slv_addr_base[0] = 32'hF0000000;
-    assign slv_hsel_i[0] = sram_1_hsel_i;
-    assign slv_hwrite_i[0] = sram_1_hwrite_i;
-    assign slv_hready_i[0] = sram_1_hready_i;
-    assign slv_hsize_i[0] = sram_1_hsize_i;
-    assign slv_hburst_i[0] = sram_1_hburst_i;
-    assign slv_htrans_i[0] = sram_1_htrans_i;
-    assign slv_hwdata_i[0] = sram_1_hwdata_i;
-    assign slv_haddr_i[0] = sram_1_haddr_i;
+    assign slv_addr_mask[0] = 32'hF0000000;
+    assign slv_addr_base[0] = 32'h10000000;
+    assign sram_1_hsel_i = slv_hsel_i[0];
+    assign sram_1_hwrite_i = slv_hwrite_i[0];
+    assign sram_1_hready_i = slv_hready_i[0];
+    assign sram_1_hsize_i = slv_hsize_i[0];
+    assign sram_1_hburst_i = slv_hburst_i[0];
+    assign sram_1_htrans_i = slv_htrans_i[0];
+    assign sram_1_hwdata_i = slv_hwdata_i[0];
+    assign sram_1_haddr_i = slv_haddr_i[0];
     assign slv_hreadyout_o[0] = sram_1_hreadyout_o;
     assign slv_hresp_o[0] = sram_1_hresp_o;
     assign slv_hrdata_o[0] = sram_1_hrdata_o;
 
-    assign slv_addr_mask[1] = 32'h20000000;
-    assign slv_addr_base[1] = 32'hF0000000;
-    assign slv_hsel_i[1] = sram_2_hsel_i;
-    assign slv_hwrite_i[1] = sram_2_hwrite_i;
-    assign slv_hready_i[1] = sram_2_hready_i;
-    assign slv_hsize_i[1] = sram_2_hsize_i;
-    assign slv_hburst_i[1] = sram_2_hburst_i;
-    assign slv_htrans_i[1] = sram_2_htrans_i;
-    assign slv_hwdata_i[1] = sram_2_hwdata_i;
-    assign slv_haddr_i[1] = sram_2_haddr_i;
+    assign slv_addr_mask[1] = 32'hF0000000;
+    assign slv_addr_base[1] = 32'h00000000;
+    assign sram_2_hsel_i = slv_hsel_i[1];
+    assign sram_2_hwrite_i = slv_hwrite_i[1];
+    assign sram_2_hready_i = slv_hready_i[1];
+    assign sram_2_hsize_i = slv_hsize_i[1];
+    assign sram_2_hburst_i = slv_hburst_i[1];
+    assign sram_2_htrans_i = slv_htrans_i[1];
+    assign sram_2_hwdata_i = slv_hwdata_i[1];
+    assign sram_2_haddr_i = slv_haddr_i[1];
     assign slv_hreadyout_o[1] = sram_2_hreadyout_o;
     assign slv_hresp_o[1] = sram_2_hresp_o;
     assign slv_hrdata_o[1] = sram_2_hrdata_o;
