@@ -3,7 +3,7 @@
 
 
 _start:
-    addi x1, x0, 0x00000030
+    li x1, 0x10000034
     csrrw x0, mtvec, x1
     csrrwi x0, mstatus, 0x00000008
     and x1, x2, x3
