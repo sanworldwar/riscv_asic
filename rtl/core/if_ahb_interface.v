@@ -177,7 +177,7 @@ module if_ahb_interface (
         end
     end
 
-    assign mst_hsel_o = ce_i; //mst_hsel_r
+    assign mst_hsel_o = ce_i; //mst_hsel_r，与地址对齐
     assign mst_htrans_o = mst_htrans_r;
     assign mst_haddr_o = mst_haddr_r;
     assign mst_hwdata_o = `HDATA_BUS_WIDTH'h0;

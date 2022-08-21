@@ -158,7 +158,7 @@ module ls_ahb_interface (
         end
     end
 
-    assign mst_hsel_o = 1'b1; //re_i | we_i
+    assign mst_hsel_o = 1'b1; //re_i | we_i，hsel切换为有效需要一个时钟周期
     assign mst_htrans_o = mst_htrans_r;
     assign mst_haddr_o = addr_i;
     assign mst_hwdata_o = mst_hwdata_r;
