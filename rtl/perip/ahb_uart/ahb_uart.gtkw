@@ -1,0 +1,66 @@
+[*]
+[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
+[*] Sat Oct  8 05:51:05 2022
+[*]
+[dumpfile] "/home/fxr/Project/riscv_asic/rtl/perip/ahb_uart/ahb_uart_tb.vcd"
+[dumpfile_mtime] "Sat Oct  8 05:48:36 2022"
+[dumpfile_size] 28448
+[savefile] "/home/fxr/Project/riscv_asic/rtl/perip/ahb_uart/ahb_uart.gtkw"
+[timestart] 3525500000000
+[size] 1846 874
+[pos] -89 -89
+*-35.359112 3670000000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] ahb_uart_tb.
+[treeopen] ahb_uart_tb.u_ahb_uart.
+[sst_width] 233
+[signals_width] 256
+[sst_expanded] 1
+[sst_vpaned_height] 506
+@28
+ahb_uart_tb.u_ahb_uart.hresetn
+ahb_uart_tb.u_ahb_uart.hsel_i
+@22
+ahb_uart_tb.u_ahb_uart.haddr_i[31:0]
+@28
+ahb_uart_tb.u_ahb_uart.hburst_i[2:0]
+ahb_uart_tb.u_ahb_uart.hsize_i[2:0]
+ahb_uart_tb.u_ahb_uart.htrans_i[1:0]
+@22
+ahb_uart_tb.u_ahb_uart.hwdata_i[31:0]
+@28
+ahb_uart_tb.u_ahb_uart.hwrite_i
+ahb_uart_tb.u_ahb_uart.hreadyout_o
+ahb_uart_tb.u_ahb_uart.hresp_o
+@22
+ahb_uart_tb.u_ahb_uart.hrdata_o[31:0]
+@28
+ahb_uart_tb.u_ahb_uart.uart_clk
+ahb_uart_tb.u_ahb_uart.uart_cs
+u_uart_rx.clk
+ahb_uart_tb.u_ahb_uart.rx
+u_uart_rx.rece_correct
+u_uart_rx.state[1:0]
+u_uart_rx.full_i
+u_uart_tx.clk
+@22
+u_uart_rx.data_o[7:0]
+@28
+ahb_uart_tb.u_ahb_uart.uart_clk
+ahb_uart_tb.u_ahb_uart.hclk
+ahb_uart_tb.u_ahb_uart.hsel_i
+ahb_uart_tb.u_ahb_uart.uart_cs
+ahb_uart_tb.u_ahb_uart.uart_read
+ahb_uart_tb.u_ahb_uart.hready_i
+ahb_uart_tb.u_ahb_uart.rf_re
+ahb_uart_tb.u_ahb_uart.vaild
+@22
+ahb_uart_tb.u_ahb_uart.hrdata_o[31:0]
+@28
+ahb_uart_tb.u_ahb_uart.rf_empty
+u_uart_tx.tx
+@22
+u_uart_tx.uart_shift_tx[8:0]
+@28
+u_uart_tx.shift
+[pattern_trace] 1
+[pattern_trace] 0

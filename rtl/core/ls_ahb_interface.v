@@ -76,9 +76,9 @@ module ls_ahb_interface (
         next_state = IDLE;
         case (state)       
             IDLE: begin
-                if (re_i) begin
+                if (re_i && mst_hready_i) begin
                     next_state = READ;
-                end else if (we_i) begin
+                end else if (we_i && mst_hready_i) begin
                     next_state = WRITE;
                 end
             end 
@@ -116,6 +116,7 @@ module ls_ahb_interface (
     reg [1:0]           mst_hburst_r;
     reg [3:0]           mst_hprot_r;
     reg                 mst_hmastlock_r;
+
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
             mst_htrans_r <= HTRANS_IDLE;

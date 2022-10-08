@@ -2,7 +2,7 @@
 //全局宏定义
 //***********************
 `define CPU_CLOCK_HZ        10000000        //cpu时钟10MHz
-`define CPU_RESET_ADDR      32'h00000000    //cpu复位地址
+`define CPU_RESET_ADDR      32'h10000000    //cpu复位地址
 `define RST_ENABLE          1'b0            //复位有效
 `define RST_DISABLE         1'b1            //复位无效
 `define ZERO_WORD           32'h00000000    //32位的数值0

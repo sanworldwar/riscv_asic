@@ -22,15 +22,15 @@ module ahb_sram #(
 
     //HTRANS
     localparam HTRANS_IDLE = 2'b00;
-  //localparam HTRANS_BUSY = 2'b00;
+    //localparam HTRANS_BUSY = 2'b00;
     localparam HTRANS_NONSEQ = 2'b10;
-  //localparam HTRANS_SEQ = 2'b00;  
+    //localparam HTRANS_SEQ = 2'b00;  
 
     //HBURSTS
     localparam HBURSTS_SINGLE = 3'b000;
-  //localparam HBURSTS_INCR = 3'b001;
-  //localparam HBURSTS_WRAP4 = 3'b010;
-  //...... 
+    //localparam HBURSTS_INCR = 3'b001;
+    //localparam HBURSTS_WRAP4 = 3'b010;
+    //...... 
 
     reg                 hwrite_r    ;
     reg [2:0]           hsize_r     ;

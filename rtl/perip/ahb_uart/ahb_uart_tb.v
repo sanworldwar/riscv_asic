@@ -1,6 +1,6 @@
-module ahb_sram_tb ();
+module ahb_uart_tb ();
     reg                     hclk        ;
-    reg                     sram_clk    ;
+    reg                     uart_clk    ;
     reg    		            hresetn     ;
     
     reg    		            hsel_i      ;
@@ -16,8 +16,11 @@ module ahb_sram_tb ();
     wire                    hresp_o     ;
     wire    [31:0]          hrdata_o    ; 
 
+    wire                    tx;
+    reg                     rx;
+
     always #10 hclk = ~hclk;
-    always @ (*) sram_clk = ~hclk;
+    always @ (*) uart_clk = hclk;
 
     always @ (*) begin
         hready_i = hreadyout_o;
@@ -34,12 +37,12 @@ module ahb_sram_tb ();
         hwdata_i <= 32'h0;
         haddr_i <= 32'h0;
         #10 hresetn <= 1'b1;
-        #1000 $finish;
+        #5000 $finish;
     end
 
     initial begin
-        $dumpfile("ahb_sram_tb.vcd");
-        $dumpvars(0, ahb_sram_tb.u_ahb_sram);
+        $dumpfile("ahb_uart_tb.vcd");
+        $dumpvars(0, ahb_uart_tb.u_ahb_uart);
     end
 
     initial begin     //“=”如果在时钟有效沿处，数据变化，则会检测到变化后的值
@@ -50,22 +53,66 @@ module ahb_sram_tb ();
         hburst_i <= 3'b000; //SINGLE
         htrans_i <= 2'b10; //NONSEQ 
         haddr_i <= 32'h0;       
-        repeat (5) begin
-            #20
-            hwdata_i <= $random;
-            haddr_i <= haddr_i + 32'h4;
-        end
-        haddr_i <= 32'h0;
+
+        #20
+        hwdata_i <= {24'd0,8'b00100111};
+        #20
+        hwdata_i <= {24'd0,8'b01101011};
+        #20
+        hwdata_i <= {24'd0,8'b10100011};
         hwrite_i <= 1'b0;
-        repeat (5) begin
-            #20
-            haddr_i <= haddr_i + 32'h4;
-        end        
+        #20
+        hsel_i <= 1'b0;
+        #3500
+        hsel_i <= 1'b1; 
+        hwrite_i <= 1'b0;
+        #80
+        hsel_i <= 1'b0;      
     end
 
-    ahb_sram u_ahb_sram(
+    initial begin
+        rx = 1'b1;
+        #80 rx <= 1'b0;
+        #160 rx <= 1'b1;
+        #160 rx <= 1'b0;
+        #160 rx <= 1'b1;
+        #160 rx <= 1'b0;
+        #160 rx <= 1'b1;
+        #160 rx <= 1'b0;
+        #160 rx <= 1'b1;
+        #160 rx <= 1'b0;
+        #160 rx <= 1'b1;
+        #160 rx <= 1'b1;
+        
+        #160 rx <= 1'b0;
+        #160 rx <= 1'b1;
+        #160 rx <= 1'b0;
+        #160 rx <= 1'b1;
+        #160 rx <= 1'b0;
+        #160 rx <= 1'b1;
+        #160 rx <= 1'b0;
+        #160 rx <= 1'b1;
+        #160 rx <= 1'b0;
+        #160 rx <= 1'b1;
+        #160 rx <= 1'b1;
+        
+     /*   #160 rx <= 1'b0;
+        #160 rx <= 1'b1;
+        #160 rx <= 1'b0;
+        #160 rx <= 1'b1;
+        #160 rx <= 1'b1;
+        #160 rx <= 1'b1;
+        #160 rx <= 1'b1;
+        #160 rx <= 1'b1;
+        #160 rx <= 1'b0;
+        #160 rx <= 1'b1;
+        #160 rx <= 1'b1;      */  
+        
+    end
+
+    ahb_uart u_ahb_uart(
         .hclk(hclk),
-        .sram_clk(sram_clk),
+        .uart_clk(uart_clk),
         .hresetn(hresetn),
 
         .hsel_i(hsel_i),
@@ -79,7 +126,10 @@ module ahb_sram_tb ();
 
         .hreadyout_o(hreadyout_o),
         .hresp_o(hresp_o),
-        .hrdata_o(hrdata_o)
+        .hrdata_o(hrdata_o),
+
+        .tx(tx),
+        .rx(rx)
     );
 
 
