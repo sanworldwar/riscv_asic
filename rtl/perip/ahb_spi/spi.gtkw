@@ -1,0 +1,32 @@
+[*]
+[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
+[*] Tue Oct 11 14:44:12 2022
+[*]
+[dumpfile] "/home/fxr/Project/riscv_asic/rtl/perip/ahb_spi/spi_tb.vcd"
+[dumpfile_mtime] "Mon Oct 10 07:32:47 2022"
+[dumpfile_size] 6754
+[savefile] "/home/fxr/Project/riscv_asic/rtl/perip/ahb_spi/spi.gtkw"
+[timestart] 204
+[size] 1000 600
+[pos] -1 -1
+*-7.000000 330 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] spi_tb.
+[sst_width] 233
+[signals_width] 142
+[sst_expanded] 1
+[sst_vpaned_height] 305
+@22
+spi_tb.u_spi.rf_data_i[7:0]
+@28
+spi_tb.u_spi.rf_re_i
+spi_tb.u_spi.rf_we_i
+spi_tb.u_spi.spi_miso
+@22
+spi_tb.u_spi.spi_cnt[3:0]
+@28
+spi_tb.u_spi.rst_n
+spi_tb.u_spi.spi_mosi
+@29
+spi_tb.u_spi.start
+[pattern_trace] 1
+[pattern_trace] 0

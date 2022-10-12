@@ -10,15 +10,20 @@
 
 module openriscv_sopc_tb ();
     
-    reg clk     ;
-    reg rst_n   ;
+    reg                     clk         ;
+    reg                     rst_n       ;
 
-    reg sram_clk    ;
+    reg                     sram_clk    ;
 
-    reg timer_irq_i ;
+    reg                     timer_irq_i ;
 
-    reg rx;
-    wire tx;
+    reg                     rx          ;
+    wire                    tx          ;
+
+    wire                    spi_clk     ;
+    reg                     spi_miso    ;
+    wire                    spi_mosi    ;
+    wire    [4:3]           spi_nss     ;    
 
     always #10 clk = ~clk;
     always #10 sram_clk = ~sram_clk;
@@ -53,7 +58,7 @@ module openriscv_sopc_tb ();
 
     openrisc_sopc #(
         .MASTERS(2),
-        .SLAVES(3)
+        .SLAVES(4)
     )
     u_openrisc_sopc(
         .clk(clk),
@@ -64,7 +69,12 @@ module openriscv_sopc_tb ();
         .timer_irq_i(timer_irq_i),
 
         .rx(rx),
-        .tx(tx)
+        .tx(tx),
+
+        .spi_clk(spi_clk),
+        .spi_miso(spi_miso),
+        .spi_mosi(spi_mosi),
+        .spi_nss(spi_nss)        
     );
 
     /*initial begin
@@ -103,19 +113,15 @@ module openriscv_sopc_tb ();
         #160 rx <= 1'b0;
         #160 rx <= 1'b0;
         #160 rx <= 1'b1;
-        
-     /*   #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b1;      */  
-        
+    end
+
+    initial begin
+        spi_miso <= 1'b0;
+        #1910 
+            repeat (8) begin
+                spi_miso <= ~spi_miso;
+                #40;
+            end
     end
 
 endmodule

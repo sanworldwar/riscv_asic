@@ -4,7 +4,6 @@ module ahb_uart #(
     parameter  DEPTH = 32      
 )(
     input   wire                    hclk        ,
-    input   wire                    uart_clk    ,
     input   wire    		        hresetn     ,
 
     input   wire    		        hsel_i      ,
@@ -50,12 +49,14 @@ module ahb_uart #(
             hburst_r <= 3'b000;
             htrans_r <= 2'b00;
             haddr_r <= {AWIDTH{1'b0}};
-        end else if (hsel_i && hready_i) begin
-            hwrite_r <= hwrite_i;
-            hsize_r <= hsize_i;
-            hburst_r <= hburst_i; //一直为single
-            htrans_r <= htrans_i;
-            haddr_r <= haddr_i;
+        end else if (hsel_i) begin
+            if (hready_i) begin
+                hwrite_r <= hwrite_i;
+                hsize_r <= hsize_i;
+                hburst_r <= hburst_i; //一直为single
+                htrans_r <= htrans_i;
+                haddr_r <= haddr_i;
+            end
         end else begin
             hwrite_r <= 1'b0;
             hsize_r <= 3'b000;
@@ -70,24 +71,22 @@ module ahb_uart #(
     reg         clk_tx;
 
     //rfifo
-    wire [7:0]  rf_data_i;
-    wire [7:0]  rf_data_o;
+    wire [7:0]  rf_wdata;
+    wire [7:0]  rf_rdata;
     wire        rf_we;
     wire        rf_re;
     wire        rf_full;
     wire        rf_empty;
-    wire        rf_valid;
 
     //wfifo
-    reg [7:0]   wf_data_i;
-    wire [7:0]  wf_data_o;
+    reg [7:0]   wf_wdata;
+    wire [7:0]  wf_rdata;
     wire        wf_we;
     wire        wf_re;
     wire        wf_full;
     wire        wf_empty;
-    wire        wf_valid;
 
-    always @(posedge uart_clk or negedge hresetn) begin
+    always @(posedge hclk or negedge hresetn) begin
         if (hresetn == 1'b0) begin
             clk_cnt <= 2'b0;
         end else if (clk_cnt == 2'b11) begin
@@ -97,7 +96,7 @@ module ahb_uart #(
         end
     end
 
-    always @(posedge uart_clk or negedge hresetn) begin
+    always @(posedge hclk or negedge hresetn) begin
         if (hresetn == 1'b0) begin
             clk_tx <= 1'b1;
         end else if (clk_cnt == 2'b11) begin
@@ -110,12 +109,12 @@ module ahb_uart #(
     wire uart_write = uart_cs && hwrite_r && !(|haddr_r[3:0]);
 
     //uart_ctrl 波特率
-    always @(posedge uart_clk or negedge hresetn) begin
+    always @(posedge hclk or negedge hresetn) begin
         if (hresetn == 1'b0) begin
             uart_ctrl <= 8'd0;
-            wf_data_i <= 8'd0;
+            wf_wdata <= 8'd0;
         end else if (uart_write) begin
-            wf_data_i <= hwdata_i[7:0];
+            wf_wdata <= hwdata_i[7:0];
         end else begin
             case (haddr_r[3:0])
                 4'd1: begin
@@ -125,22 +124,23 @@ module ahb_uart #(
                 default: begin
                 end
             endcase
-            wf_data_i <= 8'd0;
+            wf_wdata <= 8'd0;
         end
     end    
 
     assign wf_we = uart_write;
-    assign rf_re = uart_read && !rf_empty;
 
     reg                    vaild;
     reg    [DWIDTH-1:0]    hrdata_r;
 
-    always @(posedge uart_clk or negedge hresetn) begin
+    assign rf_re = uart_read && !rf_empty && !vaild;
+
+    always @(posedge hclk or negedge hresetn) begin
         if (hresetn == 1'b0) begin
             hrdata_r <= {DWIDTH{1'b0}};
             vaild <= 1'b0;
         end else if (rf_re) begin
-            hrdata_r <= {{DWIDTH-8{1'b0}},rf_data_o};
+            hrdata_r <= {{DWIDTH-8{1'b0}},rf_rdata};
             vaild <= 1'b1;
         end else begin
             hrdata_r <= {DWIDTH{1'b0}};
@@ -150,6 +150,7 @@ module ahb_uart #(
 
     assign hrdata_o = hrdata_r;
     assign hreadyout_o = !uart_cs || 
+                        (uart_cs && !uart_read && !uart_write) ||
                         (uart_write && !wf_full) || 
                         vaild;
     assign hresp_o = 1'b0; //ok
@@ -157,25 +158,25 @@ module ahb_uart #(
    
 
     uart_rx u_uart_rx (
-        .clk (uart_clk),
+        .clk (hclk),
         .rst_n (hresetn),
-        .data_o (rf_data_i),
+        .data_o (rf_wdata),
         .full_i(rf_full),
         .we_o (rf_we),
         .rx (rx)
     );
 
-    sync_r_fifo #(
+    sync_fifo #(
         .DEPTH(DEPTH),
         .DWIDTH(8)        
     )
-    _sync_r_fifo (
-        .clk(uart_clk),
+    u_sync_r_fifo (
+        .clk(hclk),
         .rst_n(hresetn),
         .ren_i(rf_re),
-        .rdata_o(rf_data_o),
+        .rdata_o(rf_rdata),
         .wen_i(rf_we),
-        .wdata_i(rf_data_i),
+        .wdata_i(rf_wdata),
         .full_o(rf_full),
         .empty_o(rf_empty)
     );
@@ -183,14 +184,13 @@ module ahb_uart #(
     uart_tx u_uart_tx (
         .clk (clk_tx),
         .rst_n (hresetn),
-        .data_i (wf_data_o),
+        .data_i (wf_rdata),
         .empty_i (wf_empty),
-        .valid_i(wf_valid),
         .re_o (wf_re),
         .tx (tx)
     ); 
 
-    async_w_fifo #(
+    async_fifo #(
         .DEPTH(DEPTH),
         .DWIDTH(8)        
     )
@@ -198,13 +198,12 @@ module ahb_uart #(
         .rst_n(hresetn),
         .rclk(clk_tx),
         .renc_i(wf_re),
-        .rdata_o(wf_data_o),
-        .wclk(uart_clk),
+        .rdata_o(wf_rdata),
+        .wclk(hclk),
         .wenc_i(wf_we),
-        .wdata_i(wf_data_i),
+        .wdata_i(wf_wdata),
         .full_o(wf_full),
-        .empty_o(wf_empty),
-        .valid_o(wf_valid)
+        .empty_o(wf_empty)
     ); 
 
 endmodule

@@ -1,4 +1,4 @@
-module ahb_uart_tb ();
+module ahb_spi_tb ();
     reg                     hclk        ;
     reg    		            hresetn     ;
     
@@ -15,8 +15,10 @@ module ahb_uart_tb ();
     wire                    hresp_o     ;
     wire    [31:0]          hrdata_o    ; 
 
-    wire                    tx;
-    reg                     rx;
+    wire                    spi_clk     ;
+    reg                     spi_miso    ;
+    wire                    spi_mosi    ;
+    wire    [4:3]           spi_nss     ;
 
     always #10 hclk = ~hclk;
 
@@ -38,10 +40,6 @@ module ahb_uart_tb ();
         #5000 $finish;
     end
 
-    initial begin
-        $dumpfile("ahb_uart_tb.vcd");
-        $dumpvars(0, ahb_uart_tb.u_ahb_uart);
-    end
 
     initial begin     //“=”如果在时钟有效沿处，数据变化，则会检测到变化后的值
         #50           //“<=”如果在时钟有效沿处，数据变化，则会检测到变化前的值  
@@ -50,16 +48,16 @@ module ahb_uart_tb ();
         hsize_i <= 3'b010;
         hburst_i <= 3'b000; //SINGLE
         htrans_i <= 2'b10; //NONSEQ 
-        haddr_i <= 32'h0;       
+        haddr_i <= 32'h1;       
 
         #20
         hwdata_i <= {24'd0,8'b00100111};
+        haddr_i <= 32'h0;
         #20
         hwdata_i <= {24'd0,8'b01101011};
-        #20
+        #40
         hwdata_i <= {24'd0,8'b10100011};
-        hwrite_i <= 1'b0;
-        #20
+        #40
         hsel_i <= 1'b0;
         #3500
         hsel_i <= 1'b1; 
@@ -69,46 +67,21 @@ module ahb_uart_tb ();
     end
 
     initial begin
-        rx = 1'b1;
-        #80 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b1;
-        
-        #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b1;
-        
-     /*   #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b1;      */  
-        
+        spi_miso <= 1'b0;
+        #190 
+            repeat (8) begin
+                spi_miso <= ~spi_miso;
+                #40;
+            end
     end
 
-    ahb_uart u_ahb_uart(
+    initial begin
+        $dumpfile("ahb_spi_tb.vcd");
+        $dumpvars(0,ahb_spi_tb.u_ahb_spi);
+    end
+
+
+    ahb_spi u_ahb_spi(
         .hclk(hclk),
         .hresetn(hresetn),
 
@@ -125,9 +98,10 @@ module ahb_uart_tb ();
         .hresp_o(hresp_o),
         .hrdata_o(hrdata_o),
 
-        .tx(tx),
-        .rx(rx)
+        .spi_clk(spi_clk),
+        .spi_miso(spi_miso),
+        .spi_mosi(spi_mosi),
+        .spi_nss(spi_nss)
     );
 
-
-endmodule //ahb_sram_tb
+endmodule

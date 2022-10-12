@@ -12,7 +12,12 @@ module openrisc_sopc #(
     input   wire            timer_irq_i ,
 
     input   wire            rx          ,   
-    output  wire            tx          
+    output  wire            tx          ,
+
+    output  wire            spi_clk     ,
+    input   wire            spi_miso    ,
+    output  wire            spi_mosi    ,
+    output  wire    [1:0]   spi_nss 
 );
     //if_ahb_interface信号与AHB的信号
     wire                    if_mst_hsel_o       ;
@@ -80,11 +85,25 @@ module openrisc_sopc #(
     wire    [2:0]  	        uart_hburst_i    ;
     wire    [2:0]  	        uart_htrans_i    ;
     wire    [`HDATA_BUS] 	uart_hwdata_i    ;
-    wire    [`HADDR_BUS] 	uart_haddr_i     ;	
+    wire    [`HADDR_BUS] 	uart_haddr_i     ;
     
     wire                    uart_hreadyout_o ;
     wire                    uart_hresp_o     ;
-    wire    [`HDATA_BUS]    uart_hrdata_o    ; 
+    wire    [`HDATA_BUS]    uart_hrdata_o    ;
+
+    //spi的信号
+    wire    		        spi_hsel_i      ;
+    wire   	 	            spi_hwrite_i    ;
+    wire			        spi_hready_i    ;
+    wire    [2:0]  	        spi_hsize_i     ;
+    wire    [2:0]  	        spi_hburst_i    ;
+    wire    [2:0]  	        spi_htrans_i    ;
+    wire    [`HDATA_BUS] 	spi_hwdata_i    ;
+    wire    [`HADDR_BUS] 	spi_haddr_i     ;	
+    
+    wire                    spi_hreadyout_o ;
+    wire                    spi_hresp_o     ;
+    wire    [`HDATA_BUS]    spi_hrdata_o    ;  
 
 
     wire                    mst_hsel_o      [MASTERS];
@@ -187,6 +206,20 @@ module openrisc_sopc #(
     assign slv_hresp_o[2] = uart_hresp_o;
     assign slv_hrdata_o[2] = uart_hrdata_o;
 
+    assign slv_addr_mask[3] = 32'hF0000000;
+    assign slv_addr_base[3] = 32'h30000000;
+    assign spi_hsel_i = slv_hsel_i[3];
+    assign spi_hwrite_i = slv_hwrite_i[3];
+    assign spi_hready_i = slv_hready_i[3];
+    assign spi_hsize_i = slv_hsize_i[3];
+    assign spi_hburst_i = slv_hburst_i[3];
+    assign spi_htrans_i = slv_htrans_i[3];
+    assign spi_hwdata_i = slv_hwdata_i[3];
+    assign spi_haddr_i = slv_haddr_i[3];
+    assign slv_hreadyout_o[3] = spi_hreadyout_o;
+    assign slv_hresp_o[3] = spi_hresp_o;
+    assign slv_hrdata_o[3] = spi_hrdata_o;
+
     openriscv u_openriscv(
         .clk(clk),
         .rst_n(rst_n),
@@ -268,7 +301,11 @@ module openrisc_sopc #(
         .slv_HRESP(slv_hresp_o)
     );
 
-    ahb_sram u1_ahb_sram(
+    ahb_sram #(
+        .AWIDTH(),
+        .DWIDTH()
+    )
+    u1_ahb_sram(
         .hclk(clk),
         .sram_clk(sram_clk),
         .hresetn(rst_n),
@@ -287,7 +324,11 @@ module openrisc_sopc #(
         .hrdata_o(sram_1_hrdata_o)
     );
 
-    ahb_sram u2_ahb_sram(
+    ahb_sram #(
+        .AWIDTH(),
+        .DWIDTH()
+    )
+    u2_ahb_sram(
         .hclk(clk),
         .sram_clk(sram_clk),
         .hresetn(rst_n),
@@ -306,9 +347,13 @@ module openrisc_sopc #(
         .hrdata_o(sram_2_hrdata_o)
     );
 
-    ahb_uart u_ahb_uart(
+    ahb_uart #(
+        .AWIDTH(),
+        .DWIDTH(),
+        .DEPTH()
+    ) 
+    u_ahb_uart(
         .hclk(clk),
-        .uart_clk(clk),
         .hresetn(rst_n),
 
         .hsel_i(uart_hsel_i),
@@ -326,6 +371,34 @@ module openrisc_sopc #(
 
         .tx(tx),
         .rx(rx)
+    );
+
+    ahb_spi #(
+        .AWIDTH(),
+        .DWIDTH(),
+        .DEPTH()
+    )
+    u_ahb_spi(
+        .hclk(clk),
+        .hresetn(rst_n),
+
+        .hsel_i(spi_hsel_i),
+        .hwrite_i(spi_hwrite_i),
+        .hready_i(spi_hready_i),
+        .hsize_i(spi_hsize_i),
+        .hburst_i(spi_hburst_i),
+        .htrans_i(spi_htrans_i),
+        .hwdata_i(spi_hwdata_i),
+        .haddr_i(spi_haddr_i),
+
+        .hreadyout_o(spi_hreadyout_o),
+        .hresp_o(spi_hresp_o),
+        .hrdata_o(spi_hrdata_o),
+
+        .spi_clk(spi_clk),
+        .spi_miso(spi_miso),
+        .spi_mosi(spi_mosi),
+        .spi_nss(spi_nss)
     );
 
 endmodule

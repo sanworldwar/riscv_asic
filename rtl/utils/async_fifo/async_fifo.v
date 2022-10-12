@@ -1,4 +1,4 @@
-module async_w_fifo #(
+module async_fifo #(
     parameter DEPTH = 32,
     parameter DWIDTH = 8
 )(
@@ -13,27 +13,25 @@ module async_w_fifo #(
     input   wire    [DWIDTH-1:0]    wdata_i ,
 
     output  wire                    full_o  ,
-    output  wire                    empty_o ,
-
-    output  wire                    valid_o
+    output  wire                    empty_o 
 );
 
     wire    ren, wen;
     wire    [$clog2(DEPTH)-1:0] raddr, waddr;
 
-    wire    [$clog2(DEPTH):0]   rcntr, next_rcntr;
+    wire    [$clog2(DEPTH):0]   rcntr;
     wire    [$clog2(DEPTH):0]   wcntr;
 
-    wire    [$clog2(DEPTH):0]   next_rcntr_g;
+    wire    [$clog2(DEPTH):0]   rcntr_g;
     wire    [$clog2(DEPTH):0]   wcntr_g;
 
-    wire    [$clog2(DEPTH):0]   sync_next_rcntr_g;
+    wire    [$clog2(DEPTH):0]   sync_rcntr_g;
     wire    [$clog2(DEPTH):0]   sync_wcntr_g;
 
-    wire    [$clog2(DEPTH):0]   sync_next_rcntr_b;
+    wire    [$clog2(DEPTH):0]   sync_rcntr_b;
     wire    [$clog2(DEPTH):0]   sync_wcntr_b;
 
-    assign full_o = ((wcntr-sync_next_rcntr_b)== DEPTH) || !rst_n; //sync_next_wcntr_g
+    assign full_o = ((wcntr-sync_rcntr_b)== DEPTH) || !rst_n;
     assign empty_o = (rcntr==sync_wcntr_b) || !rst_n;
 
     dual_port_ram #(
@@ -61,9 +59,7 @@ module async_w_fifo #(
         .empty_i(empty_o),
         .ren_o(ren),
         .rcntr_o(rcntr),
-        .next_rcntr_o(next_rcntr),
-        .raddr_o(raddr),
-        .valid_o(valid_o)
+        .raddr_o(raddr)
     );
 
     wr_con #(
@@ -87,8 +83,8 @@ module async_w_fifo #(
         .rst_n(rst_n),
         .en_i(ren),
         .fu_em_i(empty_o),
-        .binary_i(next_rcntr),
-        .gray_o(next_rcntr_g)
+        .binary_i(rcntr),
+        .gray_o(rcntr_g)
     );
 
     b2g #(
@@ -109,8 +105,8 @@ module async_w_fifo #(
             async_long_to_short u_async_long_to_short(
                 .clk(wclk),
                 .rst_n(rst_n),
-                .async_i(next_rcntr_g[i]),
-                .sync_o(sync_next_rcntr_g[i])
+                .async_i(rcntr_g[i]),
+                .sync_o(sync_rcntr_g[i])
             );           
         end
     endgenerate
@@ -131,8 +127,8 @@ module async_w_fifo #(
         .DEPTH(DEPTH)
     )
     u_r_g2b_core(
-        .gray_i(sync_next_rcntr_g),
-        .binary_o(sync_next_rcntr_b)
+        .gray_i(sync_rcntr_g),
+        .binary_o(sync_rcntr_b)
     );
 
     g2b_core #(

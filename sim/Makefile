@@ -24,8 +24,8 @@ all:  ./data/inst_rom.data ./data/inst_rom.objdump
 ./data/inst_rom.bin: ./data/inst_rom.om
 	$(OBJCOPY) -O binary $< $@
 
-./data/inst_rom.data: ./data/inst_rom.bin
-	python ./data/bin2data.py $<
+./data/inst_rom.data: ./data/inst_rom.bin ./data/bin2divide_data.py
+	python ./data/bin2divide_data.py $<
 
 ./data/inst_rom.objdump: $(OBJECTS)
 	$(OBJDUMP) -d $< > $@

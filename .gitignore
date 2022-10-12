@@ -5,3 +5,4 @@ sim/
 !rtl/core/*.v
 !rtl/perip/ahb_sram/*.v
 !rtl/perip/ahb_uart/*.v
+!rtl/perip/ahb_spi/*.v

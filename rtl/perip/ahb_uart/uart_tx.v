@@ -5,19 +5,20 @@ module uart_tx (
     input   wire            rst_n   ,
     input   wire    [7:0]   data_i  ,
 
-    input   wire            empty_i ,
-    input   wire            valid_i ,    
+    input   wire            empty_i ,    
     output  wire            re_o    ,
 
     output  wire            tx      
 );
     localparam idle = 3'b000;
-    localparam ready = 3'b001;
-    localparam starting = 3'b010;    
-    localparam sending = 3'b011;
-    localparam endsend = 3'b100;
+    localparam prepare = 3'b001;
+    localparam ready = 3'b010;
+    localparam starting = 3'b011;    
+    localparam sending = 3'b100;
+    localparam endsend = 3'b101;
 
     reg         re_r;
+    reg         re_valid;   
     reg [8:0]   uart_shift_tx;
     reg         start, shift;
     reg [2:0]   uart_cnt;
@@ -40,6 +41,7 @@ module uart_tx (
     always @(*) begin
         next_state = idle;
         re_r = 1'b0;
+        re_valid = 1'b0;
         start = 1'b0;
         shift = 1'b0;
         end_flag = 1'b0;
@@ -47,17 +49,17 @@ module uart_tx (
             idle : begin
                 if (!empty_i) begin
                     re_r = 1'b1;
-                    next_state = ready;
+                    next_state = prepare;
                 end else begin
                     next_state = idle;
                 end
             end
-            ready : begin
-                if (valid_i) begin
-                    next_state = starting;  
-                end else begin
-                    next_state = ready;
-                end                
+            prepare : begin  //因为读使能ren会打一拍
+                next_state = ready;                
+            end            
+            ready : begin    //因为异步fifo读会打一拍
+                re_valid = 1'b1;
+                next_state = starting;                
             end
             starting : begin
                 next_state = sending; 
@@ -75,13 +77,6 @@ module uart_tx (
                 end_flag = 1'b1; 
                 next_state = idle;              
             end
-            default: begin
-                next_state = idle;
-                re_r = 1'b0;
-                start = 1'b0;
-                shift = 1'b0;
-                end_flag = 1'b0;    
-            end 
         endcase
     end
 
@@ -90,7 +85,7 @@ module uart_tx (
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             uart_shift_tx <= 9'h1ff;
-        end else if (valid_i) begin
+        end else if (re_valid) begin
             uart_shift_tx <= {data_i,1'b1};
         end else if (start) begin
             uart_shift_tx <= {uart_shift_tx[8:1],1'b0}; 
