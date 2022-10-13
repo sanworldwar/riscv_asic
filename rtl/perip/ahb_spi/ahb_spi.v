@@ -38,12 +38,13 @@ module ahb_spi #(
     //localparam HBURSTS_WRAP4 = 3'b010;
     //...... 
 
-    localparam idle = 3'b000;
-    localparam prepare = 3'b001;
-    localparam read = 3'b010;
-    localparam wait_read = 3'b011;
-    localparam write = 3'b100;
-    localparam wait_write = 3'b101;
+    localparam IDLE = 3'b000;
+    localparam PREPARE = 3'b001;
+    localparam READ = 3'b010;
+    localparam WAIT_READ = 3'b011;
+    localparam WRITE = 3'b100;
+    localparam WAIT_WRITE = 3'b101;
+    localparam REG_READ = 3'b110;
 
     reg                 hwrite_r    ;
     reg [2:0]           hsize_r     ;
@@ -97,81 +98,98 @@ module ahb_spi #(
     wire spi_cs = hsel_i && (hburst_r == HBURSTS_SINGLE) && (htrans_r == HTRANS_NONSEQ);
     wire spi_read = spi_cs && !hwrite_r && !(|haddr_r[3:0]);
     wire spi_write = spi_cs && hwrite_r && !(|haddr_r[3:0]);
+    wire spi_reg_read = spi_cs && !hwrite_r && (|haddr_r[3:0]);
+    wire spi_reg_write = spi_cs && hwrite_r && (|haddr_r[3:0]);
 
+    reg [7:0]  spi_ctrl; //[0]:en [1]:CPOL, [2]:CPHA, [4:3]:SS, [7:5]:div
+    wire [3:0] spi_div = spi_ctrl[7:5];
+    wire en = spi_ctrl[0];
+    wire CPOL = spi_ctrl[1];
+    wire CPHA = spi_ctrl[2];
+    
+    assign spi_nss = en ? spi_ctrl[4:3] : 2'b11;    
+    
     //ahb端逻辑
     always @(posedge hclk or negedge hresetn) begin
         if (!hresetn) begin
-            state <= idle;
+            state <= IDLE;
         end else begin
             state <= next_state;
         end
     end
 
    always @(*) begin
-        next_state = idle;
+        next_state = IDLE;
         case (state)
-            idle : begin
+            IDLE : begin
                 if (hsel_i) begin
-                    next_state = prepare;
+                    next_state = PREPARE;
                 end else begin
-                    next_state = idle;
+                    next_state = IDLE;
                 end
             end
-            prepare : begin
+            PREPARE : begin
                 if (hsel_i) begin
                     if (spi_read) begin
                         if (!rf_empty) begin
-                            next_state = read;
+                            next_state = READ;
                         end else begin
-                            next_state = wait_read;
+                            next_state = WAIT_READ;
                         end
                     end else if (spi_write) begin
                         if (!wf_full) begin
-                            next_state = write;
+                            next_state = WRITE;
                         end else begin
-                            next_state = wait_write;
+                            next_state = WAIT_WRITE;
                         end
+                    end else if (spi_reg_read) begin
+                        next_state = REG_READ;
+                    end else if (spi_reg_write) begin
+                        next_state = IDLE; //PREPARE   hready_i=1时会无效读，此时地址未备好，下同
                     end else begin
-                        next_state = prepare;
+                        next_state = PREPARE;
                     end                   
                 end else begin
-                    next_state = idle;
+                    next_state = IDLE;
                 end
             end          
-            read : begin   
-                next_state = prepare;                
+            READ : begin   
+                next_state = IDLE; //PREPARE
             end
-            wait_read : begin   
+            WAIT_READ : begin   
                 if (spi_read) begin
                     if (!rf_empty) begin
-                        next_state = read;
+                        next_state = READ;
                     end else begin
-                        next_state = wait_read;
+                        next_state = WAIT_READ;
                     end                
                 end           
             end
-            write : begin
-                next_state = prepare;
+            WRITE : begin
+                next_state = IDLE; //PREPARE
             end
-            wait_write : begin   
+            WAIT_WRITE : begin   
                 if (spi_write) begin
                     if (!wf_full) begin
-                        next_state = write;
+                        next_state = WRITE;
                     end else begin
-                        next_state = wait_write;
+                        next_state = WAIT_WRITE;
                     end                
                 end           
-            end    
+            end 
+            REG_READ : begin
+                next_state = IDLE; //PREPARE
+            end
         endcase
     end
 
-    assign rf_re = spi_read && !rf_empty && ((state == prepare) || (state == wait_read));
+    assign rf_re = spi_read && !rf_empty && ((state == PREPARE) || (state == WAIT_READ));
 
     always @(posedge hclk or negedge hresetn) begin
         if (hresetn == 1'b0) begin
             wf_wdata <= 8'd0;
             wf_we <= 1'b0;
-        end else if (spi_write && !wf_full&& ((state == prepare) || (state == wait_write))) begin
+        end else if (spi_write && !wf_full && ((state == PREPARE) || (state == WAIT_WRITE))) begin
             wf_wdata <= hwdata_i[7:0];
             wf_we <= 1'b1;
         end else begin
@@ -187,29 +205,36 @@ module ahb_spi #(
             hrdata_r <= {DWIDTH{1'b0}};
         end else if (rf_re) begin
             hrdata_r <= {{DWIDTH-8{1'b0}},rf_rdata};
+        end else if(spi_reg_read && (state == PREPARE)) begin
+            case (haddr_r[3:0])
+                4'd1: begin
+                    hrdata_r <= spi_ctrl;
+                end
+                //.....
+                default: begin
+                    hrdata_r <= {DWIDTH{1'b0}};
+                end
+            endcase            
         end else begin
             hrdata_r <= {DWIDTH{1'b0}};
         end
     end 
  
     assign hrdata_o = hrdata_r;
-    assign hreadyout_o = ((next_state == idle) || (next_state == prepare));
+    assign hreadyout_o = ((next_state == IDLE) || (next_state == PREPARE));
     assign hresp_o = 1'b0; //ok
-
-    reg [7:0]  spi_ctrl; //[0]:en [1]:CPOL, [2]:CPHA, [4:3]:SS, [7:5]:div
 
     always @(posedge hclk or negedge hresetn) begin
         if (hresetn == 1'b0) begin
             spi_ctrl <= 8'd0;
-        end else begin
+        end else if (spi_reg_write) begin
             case (haddr_r[3:0])
                 4'd1: begin
-                    if (hwrite_r) begin
-                        spi_ctrl <= hwdata_i[7:0];
-                    end
+                    spi_ctrl <= hwdata_i[7:0];
                 end
                 //.....
                 default: begin
+
                 end
             endcase
         end
@@ -224,14 +249,6 @@ module ahb_spi #(
     reg        done;
     reg        start;
 
-    wire [3:0] spi_div = spi_ctrl[7:5];
-    wire en = spi_ctrl[0];
-    wire CPOL = spi_ctrl[1];
-    wire CPHA = spi_ctrl[2];
-    assign spi_nss = en ? spi_ctrl[4:3] : 2'b11;
-
-    reg spi_mosi_CPHA;
-    
     always @(posedge hclk or negedge hresetn) begin
         if (hresetn == 1'b0) begin
             wf_re <= 1'd0;
@@ -311,6 +328,9 @@ module ahb_spi #(
             end
         end
     end
+
+
+    reg spi_mosi_CPHA;
 
     assign spi_mosi =  CPHA ? spi_mosi_CPHA : spi_wdata[7];
 

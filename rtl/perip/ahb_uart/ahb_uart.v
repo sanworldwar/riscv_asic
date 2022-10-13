@@ -36,6 +36,14 @@ module ahb_uart #(
     //localparam HBURSTS_WRAP4 = 3'b010;
     //...... 
 
+    localparam IDLE = 3'b000;
+    localparam PREPARE = 3'b001;
+    localparam READ = 3'b010;
+    localparam WAIT_READ = 3'b011;
+    localparam WRITE = 3'b100;
+    localparam WAIT_WRITE = 3'b101;
+    localparam REG_READ = 3'b110;
+
     reg                 hwrite_r    ;
     reg [2:0]           hsize_r     ;
     reg [2:0]           hburst_r    ;
@@ -104,58 +112,143 @@ module ahb_uart #(
         end
     end
 
+    reg [2:0]   state, next_state;
+
     wire uart_cs = hsel_i && (hburst_r == HBURSTS_SINGLE) && (htrans_r == HTRANS_NONSEQ);
     wire uart_read = uart_cs && !hwrite_r && !(|haddr_r[3:0]);
     wire uart_write = uart_cs && hwrite_r && !(|haddr_r[3:0]);
+    wire uart_reg_read = uart_cs && !hwrite_r && (|haddr_r[3:0]);
+    wire uart_reg_write = uart_cs && hwrite_r && (|haddr_r[3:0]);
+
+   always @(posedge hclk or negedge hresetn) begin
+        if (!hresetn) begin
+            state <= IDLE;
+        end else begin
+            state <= next_state;
+        end
+    end
+
+   always @(*) begin
+        next_state = IDLE;
+        case (state)
+            IDLE : begin
+                if (hsel_i) begin
+                    next_state = PREPARE;
+                end else begin
+                    next_state = IDLE;
+                end
+            end
+            PREPARE : begin
+                if (hsel_i) begin
+                    if (uart_read) begin
+                        if (!rf_empty) begin
+                            next_state = READ;
+                        end else begin
+                            next_state = WAIT_READ;
+                        end
+                    end else if (uart_write) begin
+                        if (!wf_full) begin
+                            next_state = WRITE;
+                        end else begin
+                            next_state = WAIT_WRITE;
+                        end
+                    end else if (uart_reg_read) begin
+                        next_state = REG_READ;
+                    end else if (uart_reg_write) begin
+                        next_state = IDLE; //PREPARE   hready_i=1时会无效读，此时地址未备好，下同
+                    end else begin
+                        next_state = PREPARE;
+                    end                   
+                end else begin
+                    next_state = IDLE;
+                end
+            end          
+            READ : begin   
+                next_state = IDLE; //PREPARE
+            end
+            WAIT_READ : begin   
+                if (uart_read) begin
+                    if (!rf_empty) begin
+                        next_state = READ;
+                    end else begin
+                        next_state = WAIT_READ;
+                    end                
+                end           
+            end
+            WRITE : begin
+                next_state = IDLE; //PREPARE
+            end
+            WAIT_WRITE : begin   
+                if (uart_write) begin
+                    if (!wf_full) begin
+                        next_state = WRITE;
+                    end else begin
+                        next_state = WAIT_WRITE;
+                    end                
+                end           
+            end 
+            REG_READ : begin
+                next_state = IDLE; //PREPARE
+            end
+        endcase
+    end
 
     //uart_ctrl 波特率
     always @(posedge hclk or negedge hresetn) begin
         if (hresetn == 1'b0) begin
-            uart_ctrl <= 8'd0;
             wf_wdata <= 8'd0;
-        end else if (uart_write) begin
+        end else if (uart_write && !wf_full && ((state == PREPARE) || (state == WAIT_WRITE))) begin
             wf_wdata <= hwdata_i[7:0];
         end else begin
+            wf_wdata <= 8'd0;
+        end
+    end    
+
+    assign wf_we = uart_write && !wf_full && ((state == PREPARE) || (state == WAIT_WRITE));
+
+    reg    [DWIDTH-1:0]    hrdata_r;
+
+    assign rf_re = uart_read && !rf_empty && ((state == PREPARE) || (state == WAIT_READ));;
+
+    always @(posedge hclk or negedge hresetn) begin
+        if (hresetn == 1'b0) begin
+            hrdata_r <= {DWIDTH{1'b0}};
+        end else if (rf_re) begin
+            hrdata_r <= {{DWIDTH-8{1'b0}},rf_rdata};
+        end else if(uart_reg_read && (state == PREPARE)) begin
+            case (haddr_r[3:0])
+                4'd1: begin
+                    hrdata_r <= uart_ctrl;
+                end
+                //.....
+                default: begin
+                    hrdata_r <= {DWIDTH{1'b0}};
+                end
+            endcase            
+        end else begin
+            hrdata_r <= {DWIDTH{1'b0}};
+        end
+    end
+
+    assign hrdata_o = hrdata_r;
+    assign hreadyout_o = ((next_state == IDLE) || (next_state == PREPARE));
+    assign hresp_o = 1'b0; //ok
+
+    always @(posedge hclk or negedge hresetn) begin
+        if (hresetn == 1'b0) begin
+            uart_ctrl <= 8'd0;
+        end else if (uart_reg_write) begin
             case (haddr_r[3:0])
                 4'd1: begin
                     uart_ctrl <= hwdata_i[7:0];
                 end
                 //.....
                 default: begin
+
                 end
             endcase
-            wf_wdata <= 8'd0;
         end
     end    
-
-    assign wf_we = uart_write;
-
-    reg                    vaild;
-    reg    [DWIDTH-1:0]    hrdata_r;
-
-    assign rf_re = uart_read && !rf_empty && !vaild;
-
-    always @(posedge hclk or negedge hresetn) begin
-        if (hresetn == 1'b0) begin
-            hrdata_r <= {DWIDTH{1'b0}};
-            vaild <= 1'b0;
-        end else if (rf_re) begin
-            hrdata_r <= {{DWIDTH-8{1'b0}},rf_rdata};
-            vaild <= 1'b1;
-        end else begin
-            hrdata_r <= {DWIDTH{1'b0}};
-            vaild <= 1'b0;
-        end
-    end
-
-    assign hrdata_o = hrdata_r;
-    assign hreadyout_o = !uart_cs || 
-                        (uart_cs && !uart_read && !uart_write) ||
-                        (uart_write && !wf_full) || 
-                        vaild;
-    assign hresp_o = 1'b0; //ok
-
-   
 
     uart_rx u_uart_rx (
         .clk (hclk),
