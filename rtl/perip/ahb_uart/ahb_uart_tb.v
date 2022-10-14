@@ -53,7 +53,7 @@ module ahb_uart_tb ();
         haddr_i <= 32'h0;       
 
         #20
-        hwdata_i <= {24'd0,8'b00100111};
+        hwdata_i <= {24'd0,8'b00100111}; //流水线，.v IDLE -> PREPARE
         #20
         hwdata_i <= {24'd0,8'b01101011};
         #20

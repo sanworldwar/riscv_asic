@@ -48,10 +48,10 @@ module ahb_spi_tb ();
         hsize_i <= 3'b010;
         hburst_i <= 3'b000; //SINGLE
         htrans_i <= 2'b10; //NONSEQ 
-        haddr_i <= 32'h1;       
+        haddr_i <= 32'h4;       
 
         #20
-        hwdata_i <= {24'd0,8'b00100111};
+        hwdata_i <= {24'd0,8'b00100111}; //流水线，.v IDLE -> PREPARE
         haddr_i <= 32'h0;
         #20
         hwdata_i <= {24'd0,8'b01101011};

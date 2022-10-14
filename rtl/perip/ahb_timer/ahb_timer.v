@@ -1,7 +1,6 @@
-module ahb_spi #(
+module ahb_timer #(
     parameter  AWIDTH = 32,   
-    parameter  DWIDTH = 32,
-    parameter  DEPTH = 32      
+    parameter  DWIDTH = 32     
 )(
     input   wire                    hclk        ,
     input   wire    		        hresetn     ,
@@ -34,13 +33,12 @@ module ahb_spi #(
     //localparam HBURSTS_WRAP4 = 3'b010;
     //...... 
 
-    localparam IDLE = 2'b00;
-    localparam PREPARE = 2'b01;
-    localparam READ = 2'b10;
+    localparam IDLE = 1'b0;
+    localparam PREPARE = 1'b1;
 
-    localparam REG_CTRL = 4'h0;
-    localparam REG_COUNT = 4'h4;
-    localparam REG_VALUE = 4'h8;
+    localparam TIMER_CTRL = 4'h0;
+    localparam TIMER_COUNT = 4'h4;
+    localparam TIMER_VALUE = 4'h8;
 
     reg                 hwrite_r    ;
     reg [2:0]           hsize_r     ;
@@ -86,7 +84,7 @@ module ahb_spi #(
     // addr offset: 0x08
     reg [DWIDTH-1:0]    timer_value;
 
-    reg [1:0]   state, next_state;
+    reg                 state, next_state;
 
     wire timer_cs = hsel_i && (hburst_r == HBURSTS_SINGLE) && (htrans_r == HTRANS_NONSEQ);
     wire timer_read = timer_cs && !hwrite_r;
@@ -102,7 +100,7 @@ module ahb_spi #(
         end
     end
 
-   always @(*) begin
+    always @(*) begin
         next_state = IDLE;
         case (state)
             IDLE : begin
@@ -115,9 +113,9 @@ module ahb_spi #(
            PREPARE : begin
                 if (hsel_i) begin
                     if (timer_read) begin
-                        next_state = READ;
+                        next_state = PREPARE; //PREPARE   hready_i=1时会无效读，lsu此时地址未备好，下同
                     end else if (timer_write) begin 
-                        next_state = IDLE; //PREPARE   hready_i=1时会无效读，此时地址未备好，下同
+                        next_state = PREPARE; //PREPARE 
                     end else begin
                         next_state = PREPARE;
                     end 
@@ -125,9 +123,6 @@ module ahb_spi #(
                     next_state = IDLE;
                 end
             end          
-            READ : begin   
-                next_state = IDLE;                
-            end
         endcase
     end
 
@@ -154,10 +149,10 @@ module ahb_spi #(
             timer_value <= {DWIDTH{1'b0}};
         end else if (timer_write && (state == PREPARE)) begin           
             case (haddr_r[3:0])
-                REG_CTRL: begin
+                TIMER_CTRL: begin
                     timer_ctrl <= {hwdata_i[31:3], (timer_ctrl[2] & (~hwdata_i[2])), hwdata_i[1:0]};
                 end
-                REG_VALUE: begin
+                TIMER_VALUE: begin
                     timer_value <= hwdata_i;
                 end
                 default: begin
@@ -173,25 +168,23 @@ module ahb_spi #(
     reg [DWIDTH-1:0]    hrdata_r;
 
     // read regs
-    always @ (posedge hclk or negedge hresetn) begin
-        if (!hresetn) begin
-            hrdata_r <= {DWIDTH{1'b0}};
-        end else if (timer_read && (state == PREPARE)) begin
+    always @ (*) begin
+        if (timer_read && (state == PREPARE)) begin
             case (haddr_r[3:0])
-                REG_VALUE: begin
+                TIMER_VALUE: begin
                     hrdata_r <= timer_value;
                 end
-                REG_CTRL: begin
+                TIMER_CTRL: begin
                     hrdata_r <= timer_ctrl;
                 end
-                REG_COUNT: begin
+                TIMER_COUNT: begin
                     hrdata_r <= timer_count;
                 end
                 default: begin
                     hrdata_r <= {DWIDTH{1'b0}};
                 end
             endcase
-        else begin
+        end else begin
             hrdata_r <= {DWIDTH{1'b0}};
         end
     end

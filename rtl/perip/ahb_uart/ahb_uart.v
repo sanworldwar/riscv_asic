@@ -38,11 +38,12 @@ module ahb_uart #(
 
     localparam IDLE = 3'b000;
     localparam PREPARE = 3'b001;
-    localparam READ = 3'b010;
-    localparam WAIT_READ = 3'b011;
-    localparam WRITE = 3'b100;
-    localparam WAIT_WRITE = 3'b101;
-    localparam REG_READ = 3'b110;
+    localparam WAIT_READ = 3'b010;
+    localparam WRITE = 3'b011;
+    localparam WAIT_WRITE = 3'b100;
+
+    localparam UART_DATA = 4'h0;
+    localparam UART_CTRL = 4'h4;
 
     reg                 hwrite_r    ;
     reg [2:0]           hsize_r     ;
@@ -115,12 +116,12 @@ module ahb_uart #(
     reg [2:0]   state, next_state;
 
     wire uart_cs = hsel_i && (hburst_r == HBURSTS_SINGLE) && (htrans_r == HTRANS_NONSEQ);
-    wire uart_read = uart_cs && !hwrite_r && !(|haddr_r[3:0]);
-    wire uart_write = uart_cs && hwrite_r && !(|haddr_r[3:0]);
-    wire uart_reg_read = uart_cs && !hwrite_r && (|haddr_r[3:0]);
-    wire uart_reg_write = uart_cs && hwrite_r && (|haddr_r[3:0]);
+    wire uart_read = uart_cs && !hwrite_r && (haddr_r[3:0] == UART_DATA); //!(|haddr_r[3:0])
+    wire uart_write = uart_cs && hwrite_r && (haddr_r[3:0] == UART_DATA);
+    wire uart_reg_read = uart_cs && !hwrite_r && !(haddr_r[3:0] == UART_DATA);
+    wire uart_reg_write = uart_cs && hwrite_r && !(haddr_r[3:0] == UART_DATA);
 
-   always @(posedge hclk or negedge hresetn) begin
+    always @(posedge hclk or negedge hresetn) begin
         if (!hresetn) begin
             state <= IDLE;
         end else begin
@@ -128,7 +129,7 @@ module ahb_uart #(
         end
     end
 
-   always @(*) begin
+    always @(*) begin
         next_state = IDLE;
         case (state)
             IDLE : begin
@@ -139,37 +140,30 @@ module ahb_uart #(
                 end
             end
             PREPARE : begin
-                if (hsel_i) begin
-                    if (uart_read) begin
-                        if (!rf_empty) begin
-                            next_state = READ;
-                        end else begin
-                            next_state = WAIT_READ;
-                        end
-                    end else if (uart_write) begin
-                        if (!wf_full) begin
-                            next_state = WRITE;
-                        end else begin
-                            next_state = WAIT_WRITE;
-                        end
-                    end else if (uart_reg_read) begin
-                        next_state = REG_READ;
-                    end else if (uart_reg_write) begin
-                        next_state = IDLE; //PREPARE   hready_i=1时会无效读，此时地址未备好，下同
+                if (uart_read) begin
+                    if (!rf_empty) begin
+                        next_state = IDLE; //PREPARE   hready_i=1时会无效读，lsu此时地址未备好，下同
                     end else begin
-                        next_state = PREPARE;
-                    end                   
+                        next_state = WAIT_READ;
+                    end
+                end else if (uart_write) begin
+                    if (!wf_full) begin
+                        next_state = WRITE;
+                    end else begin
+                        next_state = WAIT_WRITE;
+                    end
+                end else if (uart_reg_read) begin
+                    next_state = IDLE;  //PREPARE 
+                end else if (uart_reg_write) begin
+                    next_state = IDLE; //PREPARE
                 end else begin
                     next_state = IDLE;
-                end
+                end 
             end          
-            READ : begin   
-                next_state = IDLE; //PREPARE
-            end
             WAIT_READ : begin   
                 if (uart_read) begin
                     if (!rf_empty) begin
-                        next_state = READ;
+                        next_state = IDLE; //PREPARE 
                     end else begin
                         next_state = WAIT_READ;
                     end                
@@ -186,9 +180,6 @@ module ahb_uart #(
                         next_state = WAIT_WRITE;
                     end                
                 end           
-            end 
-            REG_READ : begin
-                next_state = IDLE; //PREPARE
             end
         endcase
     end
@@ -196,11 +187,11 @@ module ahb_uart #(
     //uart_ctrl 波特率
     always @(posedge hclk or negedge hresetn) begin
         if (hresetn == 1'b0) begin
-            wf_wdata <= 8'd0;
-        end else if (uart_write && !wf_full && ((state == PREPARE) || (state == WAIT_WRITE))) begin
+            wf_wdata <= 8'h0;
+        end else if (wf_we) begin
             wf_wdata <= hwdata_i[7:0];
         end else begin
-            wf_wdata <= 8'd0;
+            wf_wdata <= 8'h0;
         end
     end    
 
@@ -210,23 +201,21 @@ module ahb_uart #(
 
     assign rf_re = uart_read && !rf_empty && ((state == PREPARE) || (state == WAIT_READ));;
 
-    always @(posedge hclk or negedge hresetn) begin
-        if (hresetn == 1'b0) begin
-            hrdata_r <= {DWIDTH{1'b0}};
-        end else if (rf_re) begin
-            hrdata_r <= {{DWIDTH-8{1'b0}},rf_rdata};
+    always @(*) begin
+        if (rf_re) begin
+            hrdata_r = {{DWIDTH-8{1'b0}},rf_rdata};
         end else if(uart_reg_read && (state == PREPARE)) begin
             case (haddr_r[3:0])
-                4'd1: begin
-                    hrdata_r <= uart_ctrl;
+                UART_CTRL: begin
+                    hrdata_r = uart_ctrl;
                 end
                 //.....
                 default: begin
-                    hrdata_r <= {DWIDTH{1'b0}};
+                    hrdata_r = {DWIDTH{1'b0}};
                 end
             endcase            
         end else begin
-            hrdata_r <= {DWIDTH{1'b0}};
+            hrdata_r = {DWIDTH{1'b0}};
         end
     end
 
@@ -236,10 +225,10 @@ module ahb_uart #(
 
     always @(posedge hclk or negedge hresetn) begin
         if (hresetn == 1'b0) begin
-            uart_ctrl <= 8'd0;
+            uart_ctrl <= 8'h0;
         end else if (uart_reg_write) begin
             case (haddr_r[3:0])
-                4'd1: begin
+                UART_CTRL: begin
                     uart_ctrl <= hwdata_i[7:0];
                 end
                 //.....

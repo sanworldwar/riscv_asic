@@ -13,20 +13,17 @@ module openriscv_sopc_tb ();
     reg                     clk         ;
     reg                     rst_n       ;
 
-    reg                     sram_clk    ;
-
-    reg                     timer_irq_i ;
-
     reg                     rx          ;
     wire                    tx          ;
 
     wire                    spi_clk     ;
     reg                     spi_miso    ;
     wire                    spi_mosi    ;
-    wire    [4:3]           spi_nss     ;    
+    wire    [4:3]           spi_nss     ;
+
+    wire    [1:0]           pin_io      ;
 
     always #10 clk = ~clk;
-    always #10 sram_clk = ~sram_clk;
 
     initial begin
         $readmemh("./data/inst_rom1.data", u_openrisc_sopc.u1_ahb_sram.bank0[0].u_sram_8kx8.mem);
@@ -50,23 +47,17 @@ module openriscv_sopc_tb ();
     initial begin
         clk = 1'b0;
         rst_n = 1'b0;
-        sram_clk = 1'b1;
-        timer_irq_i = 1'b0;
         #100 rst_n = 1'b1;
         #5500 $finish;
     end
 
     openrisc_sopc #(
         .MASTERS(2),
-        .SLAVES(4)
+        .SLAVES(6)
     )
     u_openrisc_sopc(
         .clk(clk),
         .rst_n(rst_n),
-
-        .sram_clk(sram_clk),
-
-        .timer_irq_i(timer_irq_i),
 
         .rx(rx),
         .tx(tx),
@@ -74,7 +65,9 @@ module openriscv_sopc_tb ();
         .spi_clk(spi_clk),
         .spi_miso(spi_miso),
         .spi_mosi(spi_mosi),
-        .spi_nss(spi_nss)        
+        .spi_nss(spi_nss),
+
+        .pin_io(pin_io)
     );
 
     /*initial begin
@@ -117,7 +110,7 @@ module openriscv_sopc_tb ();
 
     initial begin
         spi_miso <= 1'b0;
-        #1910 
+        #670 
             repeat (8) begin
                 spi_miso <= ~spi_miso;
                 #40;

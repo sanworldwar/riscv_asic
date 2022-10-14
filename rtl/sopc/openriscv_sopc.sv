@@ -7,17 +7,15 @@ module openrisc_sopc #(
     input   wire            clk         ,
     input   wire            rst_n       ,
 
-    input   wire            sram_clk    ,
-
-    input   wire            timer_irq_i ,
-
     input   wire            rx          ,   
     output  wire            tx          ,
 
     output  wire            spi_clk     ,
     input   wire            spi_miso    ,
     output  wire            spi_mosi    ,
-    output  wire    [1:0]   spi_nss 
+    output  wire    [1:0]   spi_nss     ,
+
+    inout   wire    [1:0]   pin_io 
 );
     //if_ahb_interface信号与AHB的信号
     wire                    if_mst_hsel_o       ;
@@ -50,60 +48,90 @@ module openrisc_sopc #(
     wire    [`HDATA_BUS]    ls_mst_hrdata_i     ;
 
     //ahb_sram_1的信号
-    wire    		        sram_1_hsel_i      ;
-    wire   	 	            sram_1_hwrite_i    ;
-    wire			        sram_1_hready_i    ;
-    wire    [2:0]  	        sram_1_hsize_i     ;
-    wire    [2:0]  	        sram_1_hburst_i    ;
-    wire    [1:0]  	        sram_1_htrans_i    ;
-    wire    [`HDATA_BUS] 	sram_1_hwdata_i    ;
-    wire    [`HADDR_BUS] 	sram_1_haddr_i     ;	
+    wire    		        sram_1_hsel_i       ;
+    wire   	 	            sram_1_hwrite_i     ;
+    wire			        sram_1_hready_i     ;
+    wire    [2:0]  	        sram_1_hsize_i      ;
+    wire    [2:0]  	        sram_1_hburst_i     ;
+    wire    [1:0]  	        sram_1_htrans_i     ;
+    wire    [`HDATA_BUS] 	sram_1_hwdata_i     ;
+    wire    [`HADDR_BUS] 	sram_1_haddr_i      ;	
     
-    wire                    sram_1_hreadyout_o ;
-    wire                    sram_1_hresp_o     ;
-    wire    [`HDATA_BUS]    sram_1_hrdata_o    ;     
+    wire                    sram_1_hreadyout_o  ;
+    wire                    sram_1_hresp_o      ;
+    wire    [`HDATA_BUS]    sram_1_hrdata_o     ;     
 
     //ahb_sram_2的信号
-    wire    		        sram_2_hsel_i      ;
-    wire   	 	            sram_2_hwrite_i    ;
-    wire			        sram_2_hready_i    ;
-    wire    [2:0]  	        sram_2_hsize_i     ;
-    wire    [2:0]  	        sram_2_hburst_i    ;
-    wire    [2:0]  	        sram_2_htrans_i    ;
-    wire    [`HDATA_BUS] 	sram_2_hwdata_i    ;
-    wire    [`HADDR_BUS] 	sram_2_haddr_i     ;	
+    wire    		        sram_2_hsel_i       ;
+    wire   	 	            sram_2_hwrite_i     ;
+    wire			        sram_2_hready_i     ;
+    wire    [2:0]  	        sram_2_hsize_i      ;
+    wire    [2:0]  	        sram_2_hburst_i     ;
+    wire    [2:0]  	        sram_2_htrans_i     ;
+    wire    [`HDATA_BUS] 	sram_2_hwdata_i     ;
+    wire    [`HADDR_BUS] 	sram_2_haddr_i      ;	
     
-    wire                    sram_2_hreadyout_o ;
-    wire                    sram_2_hresp_o     ;
-    wire    [`HDATA_BUS]    sram_2_hrdata_o    ; 
+    wire                    sram_2_hreadyout_o  ;
+    wire                    sram_2_hresp_o      ;
+    wire    [`HDATA_BUS]    sram_2_hrdata_o     ; 
 
     //uart的信号
-    wire    		        uart_hsel_i      ;
-    wire   	 	            uart_hwrite_i    ;
-    wire			        uart_hready_i    ;
-    wire    [2:0]  	        uart_hsize_i     ;
-    wire    [2:0]  	        uart_hburst_i    ;
-    wire    [2:0]  	        uart_htrans_i    ;
-    wire    [`HDATA_BUS] 	uart_hwdata_i    ;
-    wire    [`HADDR_BUS] 	uart_haddr_i     ;
+    wire    		        uart_hsel_i         ;
+    wire   	 	            uart_hwrite_i       ;
+    wire			        uart_hready_i       ;
+    wire    [2:0]  	        uart_hsize_i        ;
+    wire    [2:0]  	        uart_hburst_i       ;
+    wire    [2:0]  	        uart_htrans_i       ;
+    wire    [`HDATA_BUS] 	uart_hwdata_i       ;
+    wire    [`HADDR_BUS] 	uart_haddr_i        ;
     
-    wire                    uart_hreadyout_o ;
-    wire                    uart_hresp_o     ;
-    wire    [`HDATA_BUS]    uart_hrdata_o    ;
+    wire                    uart_hreadyout_o    ;
+    wire                    uart_hresp_o        ;
+    wire    [`HDATA_BUS]    uart_hrdata_o       ;
 
     //spi的信号
-    wire    		        spi_hsel_i      ;
-    wire   	 	            spi_hwrite_i    ;
-    wire			        spi_hready_i    ;
-    wire    [2:0]  	        spi_hsize_i     ;
-    wire    [2:0]  	        spi_hburst_i    ;
-    wire    [2:0]  	        spi_htrans_i    ;
-    wire    [`HDATA_BUS] 	spi_hwdata_i    ;
-    wire    [`HADDR_BUS] 	spi_haddr_i     ;	
+    wire    		        spi_hsel_i          ;
+    wire   	 	            spi_hwrite_i        ;
+    wire			        spi_hready_i        ;
+    wire    [2:0]  	        spi_hsize_i         ;
+    wire    [2:0]  	        spi_hburst_i        ;
+    wire    [2:0]  	        spi_htrans_i        ;
+    wire    [`HDATA_BUS] 	spi_hwdata_i        ;
+    wire    [`HADDR_BUS] 	spi_haddr_i         ;
     
-    wire                    spi_hreadyout_o ;
-    wire                    spi_hresp_o     ;
-    wire    [`HDATA_BUS]    spi_hrdata_o    ;  
+    wire                    spi_hreadyout_o     ;
+    wire                    spi_hresp_o         ;
+    wire    [`HDATA_BUS]    spi_hrdata_o        ;  
+
+    //timer的信号
+    wire    		        timer_hsel_i        ;
+    wire   	 	            timer_hwrite_i      ;
+    wire			        timer_hready_i      ;
+    wire    [2:0]  	        timer_hsize_i       ;
+    wire    [2:0]  	        timer_hburst_i      ;
+    wire    [2:0]  	        timer_htrans_i      ;
+    wire    [`HDATA_BUS] 	timer_hwdata_i      ;
+    wire    [`HADDR_BUS] 	timer_haddr_i       ;
+    
+    wire                    timer_hreadyout_o   ;
+    wire                    timer_hresp_o       ;
+    wire    [`HDATA_BUS]    timer_hrdata_o      ;
+
+    wire                    timer_irq           ;  
+
+    //gpio的信号
+    wire    		        gpio_hsel_i         ;
+    wire   	 	            gpio_hwrite_i       ;
+    wire			        gpio_hready_i       ;
+    wire    [2:0]  	        gpio_hsize_i        ;
+    wire    [2:0]  	        gpio_hburst_i       ;
+    wire    [2:0]  	        gpio_htrans_i       ;
+    wire    [`HDATA_BUS] 	gpio_hwdata_i       ;
+    wire    [`HADDR_BUS] 	gpio_haddr_i        ;	
+    
+    wire                    gpio_hreadyout_o    ;
+    wire                    gpio_hresp_o        ;
+    wire    [`HDATA_BUS]    gpio_hrdata_o       ;  
 
 
     wire                    mst_hsel_o      [MASTERS];
@@ -220,11 +248,39 @@ module openrisc_sopc #(
     assign slv_hresp_o[3] = spi_hresp_o;
     assign slv_hrdata_o[3] = spi_hrdata_o;
 
+    assign slv_addr_mask[4] = 32'hF0000000;
+    assign slv_addr_base[4] = 32'h40000000;
+    assign timer_hsel_i = slv_hsel_i[4];
+    assign timer_hwrite_i = slv_hwrite_i[4];
+    assign timer_hready_i = slv_hready_i[4];
+    assign timer_hsize_i = slv_hsize_i[4];
+    assign timer_hburst_i = slv_hburst_i[4];
+    assign timer_htrans_i = slv_htrans_i[4];
+    assign timer_hwdata_i = slv_hwdata_i[4];
+    assign timer_haddr_i = slv_haddr_i[4];
+    assign slv_hreadyout_o[4] = timer_hreadyout_o;
+    assign slv_hresp_o[4] = timer_hresp_o;
+    assign slv_hrdata_o[4] = timer_hrdata_o;
+
+    assign slv_addr_mask[5] = 32'hF0000000;
+    assign slv_addr_base[5] = 32'h50000000;
+    assign gpio_hsel_i = slv_hsel_i[5];
+    assign gpio_hwrite_i = slv_hwrite_i[5];
+    assign gpio_hready_i = slv_hready_i[5];
+    assign gpio_hsize_i = slv_hsize_i[5];
+    assign gpio_hburst_i = slv_hburst_i[5];
+    assign gpio_htrans_i = slv_htrans_i[5];
+    assign gpio_hwdata_i = slv_hwdata_i[5];
+    assign gpio_haddr_i = slv_haddr_i[5];
+    assign slv_hreadyout_o[5] = gpio_hreadyout_o;
+    assign slv_hresp_o[5] = gpio_hresp_o;
+    assign slv_hrdata_o[5] = gpio_hrdata_o;
+
     openriscv u_openriscv(
         .clk(clk),
         .rst_n(rst_n),
 
-        .timer_irq_i(timer_irq_i),
+        .timer_irq_i(timer_irq),
 
         .if_mst_hsel_o(if_mst_hsel_o),
         .if_mst_htrans_o(if_mst_htrans_o),
@@ -307,7 +363,6 @@ module openrisc_sopc #(
     )
     u1_ahb_sram(
         .hclk(clk),
-        .sram_clk(sram_clk),
         .hresetn(rst_n),
 
         .hsel_i(sram_1_hsel_i),
@@ -330,7 +385,6 @@ module openrisc_sopc #(
     )
     u2_ahb_sram(
         .hclk(clk),
-        .sram_clk(sram_clk),
         .hresetn(rst_n),
 
         .hsel_i(sram_2_hsel_i),
@@ -399,6 +453,54 @@ module openrisc_sopc #(
         .spi_miso(spi_miso),
         .spi_mosi(spi_mosi),
         .spi_nss(spi_nss)
+    );
+
+    ahb_timer #(
+        .AWIDTH(),
+        .DWIDTH()
+    )
+    u_ahb_timer(
+        .hclk(clk),
+        .hresetn(rst_n),
+
+        .hsel_i(timer_hsel_i),
+        .hwrite_i(timer_hwrite_i),
+        .hready_i(timer_hready_i),
+        .hsize_i(timer_hsize_i),
+        .hburst_i(timer_hburst_i),
+        .htrans_i(timer_htrans_i),
+        .hwdata_i(timer_hwdata_i),
+        .haddr_i(timer_haddr_i),
+
+        .hreadyout_o(timer_hreadyout_o),
+        .hresp_o(timer_hresp_o),
+        .hrdata_o(timer_hrdata_o),
+
+        .timer_irq_o(timer_irq)
+    );
+
+    ahb_gpio #(
+        .AWIDTH(),
+        .DWIDTH()
+    )
+    u_ahb_gpio(
+        .hclk(clk),
+        .hresetn(rst_n),
+
+        .hsel_i(gpio_hsel_i),
+        .hwrite_i(gpio_hwrite_i),
+        .hready_i(gpio_hready_i),
+        .hsize_i(gpio_hsize_i),
+        .hburst_i(gpio_hburst_i),
+        .htrans_i(gpio_htrans_i),
+        .hwdata_i(gpio_hwdata_i),
+        .haddr_i(gpio_haddr_i),
+
+        .hreadyout_o(gpio_hreadyout_o),
+        .hresp_o(gpio_hresp_o),
+        .hrdata_o(gpio_hrdata_o),
+
+        .pin_io(pin_io)
     );
 
 endmodule

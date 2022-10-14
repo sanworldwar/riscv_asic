@@ -3,7 +3,6 @@ module ahb_sram #(
     parameter  DWIDTH = 32    
 )(
     input   wire                    hclk        ,
-    input   wire                    sram_clk    ,
     input   wire    		        hresetn     ,
     
     input   wire    		        hsel_i      ,
@@ -32,6 +31,9 @@ module ahb_sram #(
     //localparam HBURSTS_WRAP4 = 3'b010;
     //...... 
 
+    localparam IDLE = 1'b0;
+    localparam PREPARE = 1'b1;
+
     reg                 hwrite_r    ;
     reg [2:0]           hsize_r     ;
     reg [2:0]           hburst_r    ;
@@ -45,12 +47,14 @@ module ahb_sram #(
             hburst_r <= 3'b000;
             htrans_r <= 2'b00;
             haddr_r <= {AWIDTH{1'b0}};
-        end else if (hsel_i && hready_i) begin
-            hwrite_r <= hwrite_i;
-            hsize_r <= hsize_i;
-            hburst_r <= hburst_i; //一直为single
-            htrans_r <= htrans_i;
-            haddr_r <= haddr_i;
+        end else if (hsel_i) begin
+            if (hready_i) begin
+                hwrite_r <= hwrite_i;
+                hsize_r <= hsize_i;
+                hburst_r <= hburst_i; //一直为single
+                htrans_r <= htrans_i;
+                haddr_r <= haddr_i;
+            end
         end else begin
             hwrite_r <= 1'b0;
             hsize_r <= 3'b000;
@@ -63,10 +67,46 @@ module ahb_sram #(
     assign hreadyout_o = 1'b1; //sram一直有效
     assign hresp_o = 1'b0; //ok
 
-    wire    sram_cs = (hburst_r == HBURSTS_SINGLE) || (htrans_r == HTRANS_NONSEQ);
+    reg                 state, next_state;
+
+    wire    sram_cs = (hburst_r == HBURSTS_SINGLE) && (htrans_r == HTRANS_NONSEQ);
     wire    sram_read = sram_cs && !hwrite_r;
     wire    sram_write = sram_cs && hwrite_r;
-    wire    sram_wen = !sram_write;
+    wire    sram_wen = !(sram_write && (state == PREPARE));
+
+    always @(posedge hclk or negedge hresetn) begin
+        if (!hresetn) begin
+            state <= IDLE;
+        end else begin
+            state <= next_state;
+        end
+    end
+
+    always @(*) begin
+        next_state = IDLE;
+        case (state)
+            IDLE : begin
+                if (hsel_i) begin
+                    next_state = PREPARE;
+                end else begin
+                    next_state = IDLE;
+                end
+            end
+           PREPARE : begin
+                if (hsel_i) begin
+                    if (sram_read) begin
+                        next_state = PREPARE; //PREPARE   hready_i=1时会无效读，lsu此时地址未备好，但ifu地址会备好，下同
+                    end else if (sram_write) begin 
+                        next_state = PREPARE; //PREPARE 
+                    end else begin
+                        next_state = PREPARE;
+                    end 
+                end else begin
+                    next_state = IDLE;
+                end
+            end          
+        endcase
+    end
 
     wire    sram_bank_sel = haddr_r[15] ? 1'b1 : 1'b0; //sram_bank_sel = 1'b1 select bank1
     wire    [DWIDTH-1:0]    sram_wdata = hwdata_i;
@@ -118,7 +158,7 @@ module ahb_sram #(
     genvar i;
     for (i=0; i<4; i=i+1) begin: bank0 //DWIDTH/8
         sram_8kx8 u_sram_8kx8(
-            .clk(sram_clk),
+            .clk(hclk),
             .cen_i(bank0_csn[i]),
             .wen_i(sram_wen),
             .addr_i(sram_addr),
@@ -130,7 +170,7 @@ module ahb_sram #(
     genvar j;
     for (j=0; j<4; j=j+1) begin: bank1
         sram_8kx8 u_sram_8kx8(
-            .clk(sram_clk),
+            .clk(hclk),
             .cen_i(bank1_csn[j]),
             .wen_i(sram_wen),
             .addr_i(sram_addr),

@@ -1,7 +1,6 @@
 module ahb_gpio #(
     parameter  AWIDTH = 32,   
-    parameter  DWIDTH = 32,
-    parameter  DEPTH = 32      
+    parameter  DWIDTH = 32     
 )(
     input   wire                    hclk        ,
     input   wire    		        hresetn     ,
@@ -96,7 +95,7 @@ module ahb_gpio #(
         end
     end
 
-   always @(*) begin
+    always @(*) begin
         next_state = IDLE;
         case (state)
             IDLE : begin
@@ -109,19 +108,16 @@ module ahb_gpio #(
            PREPARE : begin
                 if (hsel_i) begin
                     if (gpio_read) begin
-                        next_state = READ;
+                        next_state = PREPARE; //PREPARE   hready_i=1时会无效读，lsu此时地址未备好，下同
                     end else if (gpio_write) begin 
-                        next_state = IDLE; //PREPARE   hready_i=1时会无效读，此时地址未备好，下同
+                        next_state = PREPARE; //PREPARE
                     end else begin
                         next_state = PREPARE;
                     end 
                 end else begin
                     next_state = IDLE;
                 end
-            end          
-            READ : begin   
-                next_state = IDLE;                
-            end
+            end      
         endcase
     end
     
@@ -132,7 +128,7 @@ module ahb_gpio #(
     generate
         genvar i;
         for (i=0; i<2; i=i+1) begin
-            assign pin_io[i] = gpio_en[i] ? gpio_data[i] ? 1'bz;
+            assign pin_io[i] = gpio_en[i] ? gpio_data[i] : 1'bz;
         end
     endgenerate
 
@@ -142,7 +138,7 @@ module ahb_gpio #(
             gpio_data <= {DWIDTH{1'b0}};
             gpio_ctrl <= {DWIDTH{1'b0}};
         end else if (gpio_write && (state == PREPARE)) begin
-            case (addr_i[3:0])
+            case (haddr_r[3:0])
                 GPIO_CTRL: begin
                     gpio_ctrl <= hwdata_i;
                 end
@@ -183,11 +179,9 @@ module ahb_gpio #(
     reg [DWIDTH-1:0]    hrdata_r;
 
     // read regs
-    always @ (posedge hclk or negedge hresetn) begin
-        if (!hresetn) begin
-            hrdata_r <= {DWIDTH{1'b0}};
-        end else if (gpio_read && (state == PREPARE)) begin
-            case (addr_i[3:0])
+    always @ (*) begin
+        if (gpio_read && (state == PREPARE)) begin
+            case (haddr_r[3:0])
                 GPIO_CTRL: begin
                     hrdata_r = gpio_ctrl;
                 end
@@ -195,12 +189,12 @@ module ahb_gpio #(
                     hrdata_r = gpio_data;
                 end
                 default: begin
-                    hrdata_r = 32'h0;
+                    hrdata_r = {DWIDTH{1'b0}};
                 end
             endcase
         end
         else begin
-            hrdata_r <= {DWIDTH{1'b0}};
+            hrdata_r = {DWIDTH{1'b0}};
         end
     end
 
