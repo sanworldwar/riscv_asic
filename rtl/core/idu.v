@@ -276,11 +276,10 @@ module idu (
     
     wire    [`REG_BUS]  rs1_data = (rs1_addr == `REG_ADDR_BUS_WIDTH'h0) ? rs1_data_i   : //数据前移
                         ((rs1_addr == ex_rd_addr_i) & ex_rd_we_i)       ? ex_rd_data_i :
-                        ((rs1_addr == ls_rd_addr_i) & ls_rd_we_i)       ? ls_rd_data_i : 
                         rs1_data_i;
+
     wire    [`REG_BUS]  rs2_data = (rs2_addr == `REG_ADDR_BUS_WIDTH'h0) ? rs2_data_i   : //数据前移
                         ((rs2_addr == ex_rd_addr_i) & ex_rd_we_i)       ? ex_rd_data_i :
-                        ((rs2_addr == ls_rd_addr_i) & ls_rd_we_i)       ? ls_rd_data_i : 
                         rs2_data_i;        
                  
     assign rs1_addr_o = rs1_addr;
@@ -320,9 +319,26 @@ module idu (
         ({`DEC_INFO_BUS_WIDTH{inst_csr_op}} & {{`DEC_INFO_BUS_WIDTH-`DEC_CSR_INFO_BUS_WIDTH{1'b0}}, dec_csr_info_bus}) |
         ({`DEC_INFO_BUS_WIDTH{inst_md_op}} & {{`DEC_INFO_BUS_WIDTH-`DEC_MD_INFO_BUS_WIDTH{1'b0}}, dec_md_info_bus});
    
-    //停顿流水线 //load-store, load-use, load-branch 
-    assign  stallreq_o = ((rs1_addr != `REG_ADDR_BUS_WIDTH'h0) & (rs1_addr == ex_rd_addr_i) & rs1_re_o & !ex_rd_we_i) |
-                         ((rs2_addr != `REG_ADDR_BUS_WIDTH'h0) & (rs2_addr == ex_rd_addr_i) & rs2_re_o & !ex_rd_we_i);
+    //停顿流水线 
+    assign  stallreq_o = ((rs1_addr != `REG_ADDR_BUS_WIDTH'h0) &
+                            //Maybe load-store, load-use, load-branch 
+                         (((rs1_addr == ex_rd_addr_i) & rs1_re_o & !ex_rd_we_i)             |
+                            //Maybe load-(inst)-store, load-(inst)-use, load-(inst)-branch,
+                            //inst(!load)-inst-use, muldiv-(zero)-branch
+                          ((rs1_addr == ls_rd_addr_i) & rs1_re_o & ls_rd_we_i)              | 
+                            //muldiv(inst)-branch
+                          ((rs1_addr == ex_rd_addr_i) & rs1_re_o & ex_rd_we_i & inst_b_op)  | 
+                          ((rs1_addr == ex_rd_addr_i) & rs1_re_o & ex_rd_we_i & inst_j_jalr)
+                         ))                                                                 |
+                         ((rs2_addr != `REG_ADDR_BUS_WIDTH'h0) &
+                            //Maybe load-store, load-use, load-branch
+                         (((rs2_addr == ex_rd_addr_i) & rs2_re_o & !ex_rd_we_i)             | 
+                            //Maybe load-(inst)-store, load-(inst)-use, load-(inst)-branch,
+                            //inst(!load)-inst-use, muldiv-(zero)-branch 
+                          ((rs2_addr == ls_rd_addr_i) & rs2_re_o & ls_rd_we_i)              |  
+                            //muldiv(inst)-branch
+                          ((rs2_addr == ex_rd_addr_i) & rs2_re_o & ex_rd_we_i & inst_b_op)     
+                         ));
 
     //B(RANCH) and J(UMP) instruction result
     wire                inst_b_jump = ((rs1_data == rs2_data) & inst_b_beq)                  |

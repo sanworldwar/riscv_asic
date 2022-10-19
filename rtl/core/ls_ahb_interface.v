@@ -465,13 +465,16 @@ module ls_ahb_interface (
 
     reg    [`MEM_DATA_BUS] rdata_r;
 
+    wire state_wait = state == WAIT_READ;
+    wire [`MEM_DATA_BUS] mst_hrdata_r = mst_hrdata_i;
+
     always @(*) begin
         if (state == WAIT) begin
             rdata_r = rdata_tmp;
         end else if (mst_hready_i && ((state == READ) || (state == WAIT_READ))) begin
             rdata_r = mst_hrdata_i;
         end else begin
-            rdata_r <= `MEM_DATA_BUS_WIDTH'h0;            
+            rdata_r = `MEM_DATA_BUS_WIDTH'h0;            
         end        
     end
 

@@ -25,37 +25,39 @@ module openriscv_sopc_tb ();
 
     always #10 clk = ~clk;
 
-    /*initial begin
+    //c_sim
+    initial begin
         $readmemh("./c_sim/inst1.data", u_openrisc_sopc.u1_ahb_sram.bank0[0].u_sram_8kx8.mem);
         $readmemh("./c_sim/inst2.data", u_openrisc_sopc.u1_ahb_sram.bank0[1].u_sram_8kx8.mem);
         $readmemh("./c_sim/inst3.data", u_openrisc_sopc.u1_ahb_sram.bank0[2].u_sram_8kx8.mem);
         $readmemh("./c_sim/inst4.data", u_openrisc_sopc.u1_ahb_sram.bank0[3].u_sram_8kx8.mem);
+    end
+
+    //asm_sim
+    /*initial begin
+        $readmemh("./asm_sim/inst1.data", u_openrisc_sopc.u1_ahb_sram.bank0[0].u_sram_8kx8.mem);
+        $readmemh("./asm_sim/inst2.data", u_openrisc_sopc.u1_ahb_sram.bank0[1].u_sram_8kx8.mem);
+        $readmemh("./asm_sim/inst3.data", u_openrisc_sopc.u1_ahb_sram.bank0[2].u_sram_8kx8.mem);
+        $readmemh("./asm_sim/inst4.data", u_openrisc_sopc.u1_ahb_sram.bank0[3].u_sram_8kx8.mem);
+    end
+
+
+    initial begin
+        $readmemh("./asm_sim/regs.data", u_openrisc_sopc.u_openriscv.u_regfile.gpr_regs);
+    end
+
+    initial begin
+        $readmemh("./asm_sim/data_ram1.data", u_openrisc_sopc.u2_ahb_sram.bank0[0].u_sram_8kx8.mem);
+        $readmemh("./asm_sim/data_ram2.data", u_openrisc_sopc.u2_ahb_sram.bank0[1].u_sram_8kx8.mem);
+        $readmemh("./asm_sim/data_ram3.data", u_openrisc_sopc.u2_ahb_sram.bank0[2].u_sram_8kx8.mem);
+        $readmemh("./asm_sim/data_ram4.data", u_openrisc_sopc.u2_ahb_sram.bank0[3].u_sram_8kx8.mem);
     end*/
-
-    initial begin
-        $readmemh("./data/inst1.data", u_openrisc_sopc.u1_ahb_sram.bank0[0].u_sram_8kx8.mem);
-        $readmemh("./data/inst2.data", u_openrisc_sopc.u1_ahb_sram.bank0[1].u_sram_8kx8.mem);
-        $readmemh("./data/inst3.data", u_openrisc_sopc.u1_ahb_sram.bank0[2].u_sram_8kx8.mem);
-        $readmemh("./data/inst4.data", u_openrisc_sopc.u1_ahb_sram.bank0[3].u_sram_8kx8.mem);
-    end
-
-
-    initial begin
-        $readmemh("./data/regs.data", u_openrisc_sopc.u_openriscv.u_regfile.gpr_regs);
-    end
-
-    initial begin
-        $readmemh("./data/data_ram1.data", u_openrisc_sopc.u2_ahb_sram.bank0[0].u_sram_8kx8.mem);
-        $readmemh("./data/data_ram2.data", u_openrisc_sopc.u2_ahb_sram.bank0[1].u_sram_8kx8.mem);
-        $readmemh("./data/data_ram3.data", u_openrisc_sopc.u2_ahb_sram.bank0[2].u_sram_8kx8.mem);
-        $readmemh("./data/data_ram4.data", u_openrisc_sopc.u2_ahb_sram.bank0[3].u_sram_8kx8.mem);
-    end
 
     initial begin
         clk = 1'b0;
         rst_n = 1'b0;
         #100 rst_n = 1'b1;
-        #5500 $finish;
+        #97000 $finish; //simple 97000
     end
 
     openrisc_sopc #(
@@ -117,7 +119,7 @@ module openriscv_sopc_tb ();
 
     initial begin
         spi_miso <= 1'b0;
-        #870 
+        #930 
             repeat (8) begin
                 spi_miso <= ~spi_miso;
                 #40;
