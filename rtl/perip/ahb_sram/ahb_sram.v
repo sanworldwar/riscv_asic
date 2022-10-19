@@ -41,7 +41,7 @@ module ahb_sram #(
     reg [AWIDTH-1:0] 	haddr_r     ;
 
     always @(posedge hclk or negedge hresetn) begin
-        if(!hresetn) begin
+        if (!hresetn) begin
             hwrite_r <= 1'b0;
             hsize_r <= 3'b000;
             hburst_r <= 3'b000;
@@ -69,7 +69,7 @@ module ahb_sram #(
 
     reg                 state, next_state;
 
-    wire    sram_cs = (hburst_r == HBURSTS_SINGLE) && (htrans_r == HTRANS_NONSEQ);
+    wire    sram_cs = hsel_i && (hburst_r == HBURSTS_SINGLE) && (htrans_r == HTRANS_NONSEQ);
     wire    sram_read = sram_cs && !hwrite_r;
     wire    sram_write = sram_cs && hwrite_r;
     wire    sram_wen = !(sram_write && (state == PREPARE));
@@ -93,17 +93,13 @@ module ahb_sram #(
                 end
             end
            PREPARE : begin
-                if (hsel_i) begin
-                    if (sram_read) begin
-                        next_state = PREPARE; //PREPARE   hready_i=1时会无效读，lsu此时地址未备好，但ifu地址会备好，下同
-                    end else if (sram_write) begin 
-                        next_state = PREPARE; //PREPARE 
-                    end else begin
-                        next_state = PREPARE;
-                    end 
+                if (sram_read) begin
+                    next_state = PREPARE; //PREPARE   hready_i=1时会无效读，lsu此时地址未备好，但ifu地址会备好，下同
+                end else if (sram_write) begin 
+                    next_state = PREPARE; //PREPARE 
                 end else begin
                     next_state = IDLE;
-                end
+                end 
             end          
         endcase
     end

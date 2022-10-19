@@ -1,5 +1,5 @@
 ifndef CROSS_COMPILE
-CROSS_COMPILE = ../tools/riscv_toolchain/bin/riscv32-unknown-linux-gnu-
+CROSS_COMPILE = ../tools/riscv_toolchain/bin/riscv32-unknown-elf-
 endif
 
 CC = $(CROSS_COMPILE)as

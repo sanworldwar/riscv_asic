@@ -2,8 +2,8 @@
 
 module idu (
     //  from ifu
-    input   wire    [`REG_BUS]  pc_i    ,
-    input   wire    [31:0]      inst_i  ,
+    input   wire    [`REG_BUS]      pc_i            ,
+    input   wire    [31:0]          inst_i          ,
 
     //  to regfile
     input   wire    [`REG_BUS]      rs1_data_i      ,
@@ -321,8 +321,8 @@ module idu (
         ({`DEC_INFO_BUS_WIDTH{inst_md_op}} & {{`DEC_INFO_BUS_WIDTH-`DEC_MD_INFO_BUS_WIDTH{1'b0}}, dec_md_info_bus});
    
     //停顿流水线 //load-store, load-use, load-branch 
-    assign  stallreq_o = (rs1_addr != `REG_ADDR_BUS_WIDTH'h0) & (rs1_addr == ex_rd_addr_i) & rs1_re_o & !ex_rd_we_i |
-                         (rs2_addr != `REG_ADDR_BUS_WIDTH'h0) & (rs2_addr == ex_rd_addr_i) & rs2_re_o & !ex_rd_we_i;
+    assign  stallreq_o = ((rs1_addr != `REG_ADDR_BUS_WIDTH'h0) & (rs1_addr == ex_rd_addr_i) & rs1_re_o & !ex_rd_we_i) |
+                         ((rs2_addr != `REG_ADDR_BUS_WIDTH'h0) & (rs2_addr == ex_rd_addr_i) & rs2_re_o & !ex_rd_we_i);
 
     //B(RANCH) and J(UMP) instruction result
     wire                inst_b_jump = ((rs1_data == rs2_data) & inst_b_beq)                  |
@@ -332,7 +332,7 @@ module idu (
                                       ((rs1_data < rs2_data) & inst_b_bltu)                  |
                                       ((rs1_data >= rs2_data) & inst_b_bgeu);
     wire    [`REG_BUS]  inst_bj_pc = ((imm + pc_i) & {`REG_BUS_WIDTH{inst_j_jal}})       |
-                                     ((rs1_data + pc_i) & {`REG_BUS_WIDTH{inst_j_jalr}}) |
+                                     ((rs1_data + imm) & {`REG_BUS_WIDTH{inst_j_jalr}}) |
                                      ((imm + pc_i) & {`REG_BUS_WIDTH{(inst_b_jump)}});
 
     assign jump_req_o = (inst_b_jump | inst_j_op) & !stallreq_o;

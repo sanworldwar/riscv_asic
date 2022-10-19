@@ -1,8 +1,8 @@
 //***********************
 //全局宏定义
 //***********************
-`define CPU_CLOCK_HZ        10000000        //cpu时钟10MHz
-`define CPU_RESET_ADDR      32'h10000000    //cpu复位地址
+`define CPU_CLOCK_HZ        50000000        //cpu时钟10MHz
+`define CPU_RESET_ADDR      32'h00000000    //cpu复位地址
 `define RST_ENABLE          1'b0            //复位有效
 `define RST_DISABLE         1'b1            //复位无效
 `define ZERO_WORD           32'h00000000    //32位的数值0
@@ -11,8 +11,7 @@
 `define READ_ENABLE         1'b1            //读使能
 `define READ_DISABLE        1'b0            //读禁止
 `define EXCP_SYNC_ASSERT    2'b01           //同步异常
-`define EXCP_ASYNC_ASSERT_1   2'b10           //异步异常1
-`define EXCP_ASYNC_ASSERT_2   2'b11           //异步异常2
+`define EXCP_ASYNC_ASSERT   2'b10           //异步异常1
 
 //***********************
 //IDU信息总线宏定义

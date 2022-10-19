@@ -103,13 +103,13 @@ module openriscv (
     wire    [`MEM_ADDR_BUS] ex_mem_addr_o       ;
     wire    [`EXE_INFO_BUS] ex_exe_info_bus_o   ;
 
-    //连接exu和ctrl的信号
+    //连接exu和ctrl的信号(ex_stallreq_o also to excp)
     wire                ex_stallreq_o       ;
 
     //连接exu和excp的信号    
     wire                ex_mul_div_cancel_i ;
 
-    //连接exu和mul的信号(mul_start_o also to excp)
+    //连接exu和mul的信号
     wire                ex_mul_start_o  ;
     wire                ex_mul_cancel_o ;
     wire                ex_mul_signed_o ;
@@ -119,7 +119,7 @@ module openriscv (
     wire    [`REG_BUS]  ex_mul_res_l_i  ;
     wire    [`REG_BUS]  ex_mul_res_h_i  ;       
 
-    //连接exu和div的信号(div_start_o also to excp)    
+    //连接exu和div的信号   
     wire                ex_div_start_o      ;
     wire                ex_div_cancel_o     ;
     wire                ex_div_op1_signed_o ;
@@ -163,7 +163,7 @@ module openriscv (
     wire    [5:0]           ctrl_stall_o    ;
 
     //连接ctrl和if_ahb_interface, if_id, id_ex, ex_ls, ls_ahb_interface, ls_wb的冲刷信号
-    wire    [4:0]           ctrl_flush_o    ;
+    wire    [5:0]           ctrl_flush_o    ;
 
     //连接excp和csr_regs信号
     wire    [`REG_BUS]      excp_csr_mtvec_i    ;
@@ -176,9 +176,9 @@ module openriscv (
 
     //连接excp和ctrl信号
     wire                    excp_stallreq_o     ;
-    wire    [2:0]           excp_flushreq_o     ;
+    wire    [1:0]           excp_flushreq_o     ;
 
-    //连接excp和ifu地址跳转信号(excp_jump_req_o also to ctrl)
+    //连接excp和ifu地址跳转信号
     wire                    excp_jump_req_o   ;
     wire    [`REG_BUS]      excp_jump_pc_o    ;
 
@@ -423,17 +423,17 @@ module openriscv (
         .id_jump_req_i(id_jump_req_o),
 
         .ex_stallreq_i(ex_stallreq_o),
+        
         .stall_o(ctrl_stall_o),
 
         .excp_stallreq_i(excp_stallreq_o),
         .excp_flushreq_i(excp_flushreq_o),
-        .excp_jump_req_i(excp_jump_req_o),
 
         .flush_o(ctrl_flush_o),
 
         .if_ahb_stallreq_i(if_ahb_stallreq_o),
 
-        .ls_ahb_stallreq_i(ls_ahb_stallreq_o)//ls_ahb_stallreq_o        
+        .ls_ahb_stallreq_i(ls_ahb_stallreq_o)        
     );
 
     csr_regfile u_csr_regfile(
@@ -465,6 +465,7 @@ module openriscv (
 
         .dec_sys_bus_i(id_dec_sys_bus_o),
         .pc_i(id_pc_o),
+        .id_jump_req_i(id_jump_req_o),
 
         .csr_mtvec_i(excp_csr_mtvec_i),
         .csr_mepc_i(excp_csr_mepc_i),
@@ -480,9 +481,10 @@ module openriscv (
         .jump_req_o(excp_jump_req_o),
         .jump_pc_o(excp_jump_pc_o),
 
-        .mul_start_i(ex_mul_start_o),
-        .div_start_i(ex_div_start_o),
-        .mul_div_cancel_o(ex_mul_div_cancel_i)
+        .ex_stallreq_i(ex_stallreq_o),
+        .mul_div_cancel_o(ex_mul_div_cancel_i),
+
+        .ls_ahb_stallreq_i(ls_ahb_stallreq_o)
     );
 
     mul u_mul(
@@ -553,6 +555,7 @@ module openriscv (
         .addr_i(ls_mem_addr_o),
 
         .stall_i(ctrl_stall_o),
+        .flush_i(ctrl_flush_o),
         .stallreq_o(ls_ahb_stallreq_o),
 
         .mst_hsel_o(ls_mst_hsel_o),

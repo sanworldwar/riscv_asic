@@ -28,10 +28,10 @@ module id_ex (
 
     //from ctrl
     input   wire    [5:0]           stall_i         ,
-    input   wire    [4:0]           flush_i              
+    input   wire    [5:0]           flush_i              
 );
 
-    wire    clr = (stall_i[2] & !stall_i[3]) | flush_i[2]; //译码暂停，而执行继续/冲刷译码
+    wire    clr = (stall_i[2] && !stall_i[3]) || flush_i[2]; //译码暂停，而执行继续/冲刷译码
     wire    load = !stall_i[2];
 
 

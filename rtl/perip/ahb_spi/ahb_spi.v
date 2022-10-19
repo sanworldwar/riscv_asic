@@ -53,7 +53,7 @@ module ahb_spi #(
     reg [AWIDTH-1:0] 	haddr_r     ;
 
     always @(posedge hclk or negedge hresetn) begin
-        if(!hresetn) begin
+        if (!hresetn) begin
             hwrite_r <= 1'b0;
             hsize_r <= 3'b000;
             hburst_r <= 3'b000;
@@ -129,26 +129,22 @@ module ahb_spi #(
                 end
             end
             PREPARE : begin
-                if (hsel_i) begin
-                    if (spi_read) begin
-                        if (!rf_empty) begin
-                            next_state = IDLE; //PREPARE   hready_i=1时会无效读，lsu此时地址未备好，下同
-                        end else begin
-                            next_state = WAIT_READ;
-                        end
-                    end else if (spi_write) begin
-                        if (!wf_full) begin
-                            next_state = IDLE; //PREPARE
-                        end else begin
-                            next_state = WAIT_WRITE;
-                        end
-                    end else if (spi_reg_read) begin
-                        next_state = IDLE; //PREPARE
-                    end else if (spi_reg_write) begin
-                        next_state = IDLE; //PREPARE
+                if (spi_read) begin
+                    if (!rf_empty) begin
+                        next_state = PREPARE; //PREPARE   hready_i=1时会无效读，lsu此时地址未备好，下同
                     end else begin
-                        next_state = IDLE;
-                    end                   
+                        next_state = WAIT_READ;
+                    end
+                end else if (spi_write) begin
+                    if (!wf_full) begin
+                        next_state = PREPARE; //PREPARE
+                    end else begin
+                        next_state = WAIT_WRITE;
+                    end
+                end else if (spi_reg_read) begin
+                    next_state = PREPARE; //PREPARE
+                end else if (spi_reg_write) begin
+                    next_state = PREPARE; //PREPARE
                 end else begin
                     next_state = IDLE;
                 end
@@ -156,7 +152,7 @@ module ahb_spi #(
             WAIT_READ : begin   
                 if (spi_read) begin
                     if (!rf_empty) begin
-                        next_state = IDLE; //PREPARE
+                        next_state = PREPARE; //PREPARE
                     end else begin
                         next_state = WAIT_READ;
                     end                
@@ -165,7 +161,7 @@ module ahb_spi #(
             WAIT_WRITE : begin   
                 if (spi_write) begin
                     if (!wf_full) begin
-                        next_state = IDLE; //PREPARE
+                        next_state = PREPARE; //PREPARE
                     end else begin
                         next_state = WAIT_WRITE;
                     end                
@@ -186,7 +182,7 @@ module ahb_spi #(
     always @(*) begin
         if (rf_re) begin
             hrdata_r = {{DWIDTH-8{1'b0}},rf_rdata};
-        end else if(spi_reg_read && (state == PREPARE)) begin
+        end else if (spi_reg_read && (state == PREPARE)) begin
             case (haddr_r[3:0])
                 SPI_CTRL: begin
                     hrdata_r = spi_ctrl;

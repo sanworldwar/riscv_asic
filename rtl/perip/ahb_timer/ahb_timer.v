@@ -47,7 +47,7 @@ module ahb_timer #(
     reg [AWIDTH-1:0] 	haddr_r     ;
 
     always @(posedge hclk or negedge hresetn) begin
-        if(!hresetn) begin
+        if (!hresetn) begin
             hwrite_r <= 1'b0;
             hsize_r <= 3'b000;
             hburst_r <= 3'b000;
@@ -111,17 +111,13 @@ module ahb_timer #(
                 end
             end
            PREPARE : begin
-                if (hsel_i) begin
-                    if (timer_read) begin
-                        next_state = PREPARE; //PREPARE   hready_i=1时会无效读，lsu此时地址未备好，下同
-                    end else if (timer_write) begin 
-                        next_state = PREPARE; //PREPARE 
-                    end else begin
-                        next_state = PREPARE;
-                    end 
+                if (timer_read) begin
+                    next_state = PREPARE; //PREPARE   hready_i=1时会无效读，lsu此时地址未备好，下同
+                end else if (timer_write) begin 
+                    next_state = PREPARE; //PREPARE 
                 end else begin
                     next_state = IDLE;
-                end
+                end 
             end          
         endcase
     end

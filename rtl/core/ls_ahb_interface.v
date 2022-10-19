@@ -12,8 +12,9 @@ module ls_ahb_interface (
     input   wire    [`MEM_ADDR_BUS] addr_i      ,
 
     //from ctrl
-    input   wire    [5:0]       stall_i     ,
-    output  wire                stallreq_o  ,
+    input   wire    [5:0]           stall_i     ,
+    input   wire    [5:0]           flush_i     ,
+    output  wire                    stallreq_o  ,
 
     //to ahb bus
     output  wire                    mst_hsel_o      ,
@@ -57,11 +58,12 @@ module ls_ahb_interface (
     localparam WRITE = 3'b011;
     localparam WAIT_READ = 3'b100;
     localparam WAIT_WRITE = 3'b101;
+    localparam WAIT = 3'b110;
 
 
     reg [2:0]   state, next_state;
     always @(posedge clk or negedge rst_n) begin
-        if(!rst_n) begin
+        if (!rst_n) begin
             state <= IDLE;
         end else begin
             state <= next_state;
@@ -76,52 +78,97 @@ module ls_ahb_interface (
         next_state = IDLE;
         case (state)       
             IDLE: begin
-                if ((re_i || we_i) && mst_hready_i) begin
+                if (flush_i[4]) begin
+                    next_state = IDLE;
+                end else if ((re_i || we_i) && mst_hready_i) begin
                     next_state = PREPARE;
                 end else begin
                     next_state = IDLE;
                 end
             end 
             PREPARE: begin
-                if (re_i && mst_hready_i) begin
+                if (flush_i[4]) begin
+                    next_state = IDLE;
+                end else if (re_i && mst_hready_i) begin
                     next_state = READ;
                 end else if (we_i && mst_hready_i) begin
                     next_state = WRITE;
                 end else begin
-                    next_state = PREPARE;
+                    next_state = IDLE;
                 end
             end
             READ: begin
-                if (mst_hready_i) begin
-                    if (we_i) begin
-                        next_state = WRITE;                            
-                    end else begin
-                        next_state = IDLE;
-                    end                       
+                if (flush_i[4]) begin
+                    next_state = IDLE;                  
                 end else begin
-                    next_state = WAIT_READ;
+                    if (mst_hready_i) begin
+                        if (we_i) begin
+                            next_state = WRITE;                            
+                        end else if (stall_i[5]) begin
+                            next_state = WAIT;
+                        end else begin
+                            next_state = IDLE;
+                        end
+                    end else begin
+                        next_state = WAIT_READ;
+                    end
                 end
             end
             WRITE: begin
-                if (mst_hready_i) begin
+                if (flush_i[4]) begin
                     next_state = IDLE;
                 end else begin
-                    next_state = WAIT_WRITE;
+                    if (mst_hready_i) begin
+                        if (stall_i[5]) begin
+                            next_state = WAIT;
+                        end else begin
+                            next_state = IDLE;
+                        end
+                    end else begin
+                       next_state = WAIT_WRITE; 
+                    end
                 end
             end
             WAIT_READ: begin
-                if (mst_hready_i) begin
-                    next_state = IDLE;
+                if (flush_i[4]) begin
+                    next_state = IDLE;                         
                 end else begin
-                    next_state = WAIT_READ;
-                end                
+                    if (mst_hready_i) begin
+                        if (we_i) begin
+                            next_state = WRITE; 
+                        end else if (stall_i[5]) begin
+                            next_state = WAIT;                         
+                        end else begin
+                            next_state = IDLE;
+                        end                           
+                    end else begin
+                        next_state = WAIT_READ;
+                    end
+                end
             end
             WAIT_WRITE: begin
-                if (mst_hready_i) begin
-                    next_state = IDLE;
+                if (flush_i[4]) begin
+                    next_state = IDLE;                        
                 end else begin
-                    next_state = WAIT_WRITE;
-                end                
+                    if (mst_hready_i) begin
+                        if (stall_i[5]) begin
+                            next_state = WAIT;
+                        end else begin
+                            next_state = IDLE;
+                        end
+                    end else begin
+                        next_state = WAIT_WRITE;                        
+                    end
+                end
+            end
+            WAIT: begin
+                if (flush_i[4]) begin
+                    next_state = IDLE;                        
+                end else if (stall_i[5]) begin 
+                    next_state = WAIT;
+                end else begin
+                    next_state = IDLE;
+                end          
             end
         endcase
     end
@@ -138,7 +185,7 @@ module ls_ahb_interface (
     reg                 mst_priority_r;
 
     always @(posedge clk or negedge rst_n) begin
-        if(!rst_n) begin
+        if (!rst_n) begin
             mst_hsel_r <= 1'b0;
             mst_htrans_r <= HTRANS_IDLE;
             mst_haddr_r <= `HADDR_BUS_WIDTH'H0;
@@ -153,7 +200,18 @@ module ls_ahb_interface (
         else begin
             case (state)
                 IDLE: begin
-                    if (re_i && mst_hready_i) begin
+                    if (flush_i[4]) begin
+                        mst_hsel_r <= 1'b0;
+                        mst_htrans_r <= HTRANS_IDLE;
+                        mst_haddr_r <= `HADDR_BUS_WIDTH'H0;
+                        mst_hwdata_r <= `HDATA_BUS_WIDTH'h0;
+                        mst_hwrite_r <= 1'b0;
+                        mst_hsize_r <= 3'b000;
+                        mst_hburst_r <= HBURSTS_SINGLE;
+                        mst_hprot_r <= 4'b0000;
+                        mst_hmastlock_r <= 1'b0;
+                        mst_priority_r <= 1'b0;                        
+                    end else if (re_i && mst_hready_i) begin
                         mst_hsel_r <= 1'b1;
                         mst_htrans_r <= HTRANS_NONSEQ;
                         mst_haddr_r <= addr_i;
@@ -162,7 +220,7 @@ module ls_ahb_interface (
                         mst_hsize_r <= 3'b010;
                         mst_hburst_r <= HBURSTS_SINGLE;
                         mst_hprot_r <= {3'b000, HPORT_OPCODE_FETCH};
-                        mst_hmastlock_r <= 1'b1;
+                        mst_hmastlock_r <= 1'b0;
                         mst_priority_r <= 1'b1;
                     end else if (we_i && mst_hready_i) begin
                         mst_hsel_r <= 1'b1;
@@ -173,7 +231,7 @@ module ls_ahb_interface (
                         mst_hsize_r <= 3'b010;
                         mst_hburst_r <= HBURSTS_SINGLE;
                         mst_hprot_r <= {3'b000, HPORT_OPCODE_FETCH};
-                        mst_hmastlock_r <= 1'b1;
+                        mst_hmastlock_r <= 1'b0;
                         mst_priority_r <= 1'b1;                        
                     end else begin
                         mst_hsel_r <= 1'b0;
@@ -185,100 +243,57 @@ module ls_ahb_interface (
                         mst_hburst_r <= HBURSTS_SINGLE;
                         mst_hprot_r <= 4'b0000;
                         mst_hmastlock_r <= 1'b0;
-                        mst_priority_r <= 1'b1;
+                        mst_priority_r <= 1'b0;
                     end
                 end
                 PREPARE: begin
-                    if (mst_hready_i) begin
-                        if (re_i) begin
-                            if (we_i) begin
-                                mst_hsel_r <= 1'b1;
-                                mst_htrans_r <= HTRANS_NONSEQ;
-                                mst_haddr_r <= addr_i;
-                                mst_hwdata_r <= `HDATA_BUS_WIDTH'h0;
-                                mst_hwrite_r <= 1'b1;
-                                mst_hsize_r <= 3'b010;
-                                mst_hburst_r <= HBURSTS_SINGLE;
-                                mst_hprot_r <= {3'b000, HPORT_OPCODE_FETCH};
-                                mst_hmastlock_r <= 1'b1;
-                                mst_priority_r <= 1'b1;                                 
-                            end else begin
-                                mst_hsel_r <= 1'b1;
-                                mst_htrans_r <= HTRANS_NONSEQ;
-                                mst_haddr_r <= addr_i;
-                                mst_hwdata_r <= `HDATA_BUS_WIDTH'h0;
-                                mst_hwrite_r <= 1'b0;
-                                mst_hsize_r <= 3'b010;
-                                mst_hburst_r <= HBURSTS_SINGLE;
-                                mst_hprot_r <= {3'b000, HPORT_OPCODE_FETCH};
-                                mst_hmastlock_r <= 1'b1;
-                                mst_priority_r <= 1'b1; ;                               
-                            end
-                        end else if (we_i) begin
-                            mst_hsel_r <= 1'b1;
-                            mst_htrans_r <= HTRANS_NONSEQ;
-                            mst_haddr_r <= addr_i;
-                            mst_hwdata_r <= wdata_i;
-                            mst_hwrite_r <= 1'b0;
-                            mst_hsize_r <= 3'b010;
-                            mst_hburst_r <= HBURSTS_SINGLE;
-                            mst_hprot_r <= {3'b000, HPORT_OPCODE_FETCH};
-                            mst_hmastlock_r <= 1'b1;
-                            mst_priority_r <= 1'b1;
-                        end else begin
-                            mst_hsel_r <= 1'b1;
-                            mst_htrans_r <= HTRANS_IDLE;
-                            mst_haddr_r <= addr_i;
-                            mst_hwdata_r <= `HDATA_BUS_WIDTH'h0;
-                            mst_hwrite_r <= 1'b0;
-                            mst_hsize_r <= 3'b000;
-                            mst_hburst_r <= HBURSTS_SINGLE;
-                            mst_hprot_r <= 4'b0000;
-                            mst_hmastlock_r <= 1'b0;
-                            mst_priority_r <= 1'b1;                            
-                        end
-                    end else begin
-                            mst_hsel_r <= 1'b1;
-                            mst_htrans_r <= HTRANS_IDLE;
-                            mst_haddr_r <= addr_i;
-                            mst_hwdata_r <= `HDATA_BUS_WIDTH'h0;
-                            mst_hwrite_r <= 1'b0;
-                            mst_hsize_r <= 3'b000;
-                            mst_hburst_r <= HBURSTS_SINGLE;
-                            mst_hprot_r <= 4'b0000;
-                            mst_hmastlock_r <= 1'b0;
-                            mst_priority_r <= 1'b1;                         
-                    end
-                end
-                READ: begin
-                    if (mst_hready_i) begin
+                    if (flush_i[4]) begin
+                        mst_hsel_r <= 1'b0;
+                        mst_htrans_r <= HTRANS_IDLE;
+                        mst_haddr_r <= `HADDR_BUS_WIDTH'H0;
+                        mst_hwdata_r <= `HDATA_BUS_WIDTH'h0;
+                        mst_hwrite_r <= 1'b0;
+                        mst_hsize_r <= 3'b000;
+                        mst_hburst_r <= HBURSTS_SINGLE;
+                        mst_hprot_r <= 4'b0000;
+                        mst_hmastlock_r <= 1'b0;
+                        mst_priority_r <= 1'b0; 
+                    end else if (re_i && mst_hready_i) begin
                         if (we_i) begin
                             mst_hsel_r <= 1'b1;
                             mst_htrans_r <= HTRANS_NONSEQ;
                             mst_haddr_r <= addr_i;
-                            mst_hwdata_r <= wdata_i;
+                            mst_hwdata_r <= `HDATA_BUS_WIDTH'h0;
+                            mst_hwrite_r <= 1'b1;
+                            mst_hsize_r <= 3'b010;
+                            mst_hburst_r <= HBURSTS_SINGLE;
+                            mst_hprot_r <= {3'b000, HPORT_OPCODE_FETCH};
+                            mst_hmastlock_r <= 1'b0;
+                            mst_priority_r <= 1'b1;                                 
+                        end else begin
+                            mst_hsel_r <= 1'b1;
+                            mst_htrans_r <= HTRANS_NONSEQ;
+                            mst_haddr_r <= addr_i;
+                            mst_hwdata_r <= `HDATA_BUS_WIDTH'h0;
                             mst_hwrite_r <= 1'b0;
                             mst_hsize_r <= 3'b010;
                             mst_hburst_r <= HBURSTS_SINGLE;
                             mst_hprot_r <= {3'b000, HPORT_OPCODE_FETCH};
-                            mst_hmastlock_r <= 1'b1;
-                            mst_priority_r <= 1'b1; 
-                        end else begin
-                            mst_hsel_r <= 1'b0;
-                            mst_htrans_r <= HTRANS_IDLE;
-                            mst_haddr_r <= `HADDR_BUS_WIDTH'H0;
-                            mst_hwdata_r <= `HDATA_BUS_WIDTH'h0;
-                            mst_hwrite_r <= 1'b0;
-                            mst_hsize_r <= 3'b000;
-                            mst_hburst_r <= HBURSTS_SINGLE;
-                            mst_hprot_r <= 4'b0000;
                             mst_hmastlock_r <= 1'b0;
-                            mst_priority_r <= 1'b1;                             
+                            mst_priority_r <= 1'b1; ;                               
                         end
-                    end                    
-                end
-                WRITE: begin
-                    if (mst_hready_i) begin
+                    end else if (we_i && mst_hready_i) begin
+                        mst_hsel_r <= 1'b1;
+                        mst_htrans_r <= HTRANS_NONSEQ;
+                        mst_haddr_r <= addr_i;
+                        mst_hwdata_r <= wdata_i;
+                        mst_hwrite_r <= 1'b0;
+                        mst_hsize_r <= 3'b010;
+                        mst_hburst_r <= HBURSTS_SINGLE;
+                        mst_hprot_r <= {3'b000, HPORT_OPCODE_FETCH};
+                        mst_hmastlock_r <= 1'b0;
+                        mst_priority_r <= 1'b1;
+                    end else begin
                         mst_hsel_r <= 1'b0;
                         mst_htrans_r <= HTRANS_IDLE;
                         mst_haddr_r <= `HADDR_BUS_WIDTH'H0;
@@ -288,11 +303,65 @@ module ls_ahb_interface (
                         mst_hburst_r <= HBURSTS_SINGLE;
                         mst_hprot_r <= 4'b0000;
                         mst_hmastlock_r <= 1'b0;
-                        mst_priority_r <= 1'b1;  
+                        mst_priority_r <= 1'b0;                           
+                    end
+                end
+                READ: begin
+                    if (flush_i[4]) begin
+                        mst_hsel_r <= 1'b0;
+                        mst_htrans_r <= HTRANS_IDLE;
+                        mst_haddr_r <= `HADDR_BUS_WIDTH'H0;
+                        mst_hwdata_r <= `HDATA_BUS_WIDTH'h0;
+                        mst_hwrite_r <= 1'b0;
+                        mst_hsize_r <= 3'b000;
+                        mst_hburst_r <= HBURSTS_SINGLE;
+                        mst_hprot_r <= 4'b0000;
+                        mst_hmastlock_r <= 1'b0;
+                        mst_priority_r <= 1'b0; 
+                    end else begin
+                        if (mst_hready_i) begin
+                            if (we_i) begin
+                                mst_hsel_r <= 1'b1;
+                                mst_htrans_r <= HTRANS_NONSEQ;
+                                mst_haddr_r <= addr_i;
+                                mst_hwdata_r <= wdata_i;
+                                mst_hwrite_r <= 1'b0;
+                                mst_hsize_r <= 3'b010;
+                                mst_hburst_r <= HBURSTS_SINGLE;
+                                mst_hprot_r <= {3'b000, HPORT_OPCODE_FETCH};
+                                mst_hmastlock_r <= 1'b0;
+                                mst_priority_r <= 1'b1; 
+                            end else begin
+                                mst_hsel_r <= 1'b0;
+                                mst_htrans_r <= HTRANS_IDLE;
+                                mst_haddr_r <= `HADDR_BUS_WIDTH'H0;
+                                mst_hwdata_r <= `HDATA_BUS_WIDTH'h0;
+                                mst_hwrite_r <= 1'b0;
+                                mst_hsize_r <= 3'b000;
+                                mst_hburst_r <= HBURSTS_SINGLE;
+                                mst_hprot_r <= 4'b0000;
+                                mst_hmastlock_r <= 1'b0;
+                                mst_priority_r <= 1'b0;                             
+                            end
+                        end                         
+                    end                   
+                end
+                WRITE: begin
+                    if (mst_hready_i | flush_i[4]) begin
+                        mst_hsel_r <= 1'b0;
+                        mst_htrans_r <= HTRANS_IDLE;
+                        mst_haddr_r <= `HADDR_BUS_WIDTH'H0;
+                        mst_hwdata_r <= `HDATA_BUS_WIDTH'h0;
+                        mst_hwrite_r <= 1'b0;
+                        mst_hsize_r <= 3'b000;
+                        mst_hburst_r <= HBURSTS_SINGLE;
+                        mst_hprot_r <= 4'b0000;
+                        mst_hmastlock_r <= 1'b0;
+                        mst_priority_r <= 1'b0;  
                     end                    
                 end
                 WAIT_READ: begin
-                    if (mst_hready_i) begin
+                    if (flush_i[4]) begin
                         mst_hsel_r <= 1'b0;
                         mst_htrans_r <= HTRANS_IDLE;
                         mst_haddr_r <= `HADDR_BUS_WIDTH'H0;
@@ -302,11 +371,37 @@ module ls_ahb_interface (
                         mst_hburst_r <= HBURSTS_SINGLE;
                         mst_hprot_r <= 4'b0000;
                         mst_hmastlock_r <= 1'b0;
-                        mst_priority_r <= 1'b1;  
+                        mst_priority_r <= 1'b0;  
+                    end else begin
+                        if (mst_hready_i) begin
+                            if (we_i) begin
+                                mst_hsel_r <= 1'b1;
+                                mst_htrans_r <= HTRANS_NONSEQ;
+                                mst_haddr_r <= addr_i;
+                                mst_hwdata_r <= wdata_i;
+                                mst_hwrite_r <= 1'b0;
+                                mst_hsize_r <= 3'b010;
+                                mst_hburst_r <= HBURSTS_SINGLE;
+                                mst_hprot_r <= {3'b000, HPORT_OPCODE_FETCH};
+                                mst_hmastlock_r <= 1'b0;
+                                mst_priority_r <= 1'b1; 
+                            end else begin
+                                mst_hsel_r <= 1'b0;
+                                mst_htrans_r <= HTRANS_IDLE;
+                                mst_haddr_r <= `HADDR_BUS_WIDTH'H0;
+                                mst_hwdata_r <= `HDATA_BUS_WIDTH'h0;
+                                mst_hwrite_r <= 1'b0;
+                                mst_hsize_r <= 3'b000;
+                                mst_hburst_r <= HBURSTS_SINGLE;
+                                mst_hprot_r <= 4'b0000;
+                                mst_hmastlock_r <= 1'b0;
+                                mst_priority_r <= 1'b0;                             
+                            end
+                        end
                     end
                 end
                 WAIT_WRITE: begin
-                    if (mst_hready_i) begin
+                    if (mst_hready_i | flush_i[4]) begin
                         mst_hsel_r <= 1'b0;
                         mst_htrans_r <= HTRANS_IDLE;
                         mst_haddr_r <= `HADDR_BUS_WIDTH'H0;
@@ -316,8 +411,20 @@ module ls_ahb_interface (
                         mst_hburst_r <= HBURSTS_SINGLE;
                         mst_hprot_r <= 4'b0000;
                         mst_hmastlock_r <= 1'b0;
-                        mst_priority_r <= 1'b1;  
+                        mst_priority_r <= 1'b0;  
                     end
+                end
+                WAIT:begin
+                    mst_hsel_r <= 1'b0;
+                    mst_htrans_r <= HTRANS_IDLE;
+                    mst_haddr_r <= `HADDR_BUS_WIDTH'H0;
+                    mst_hwdata_r <= `HDATA_BUS_WIDTH'h0;
+                    mst_hwrite_r <= 1'b0;
+                    mst_hsize_r <= 3'b000;
+                    mst_hburst_r <= HBURSTS_SINGLE;
+                    mst_hprot_r <= 4'b0000;
+                    mst_hmastlock_r <= 1'b0;
+                    mst_priority_r <= 1'b0;      
                 end
                 default: begin
                     mst_hsel_r <= 1'b0;
@@ -329,7 +436,7 @@ module ls_ahb_interface (
                     mst_hburst_r <= HBURSTS_SINGLE;
                     mst_hprot_r <= 4'b0000;
                     mst_hmastlock_r <= 1'b0;
-                    mst_priority_r <= 1'b1;                     
+                    mst_priority_r <= 1'b0;                     
                 end
             endcase                            
         end
@@ -346,10 +453,22 @@ module ls_ahb_interface (
     assign mst_hmastlock_o = mst_hmastlock_r;
     assign mst_priority_o = mst_priority_r;
 
+    reg    [`MEM_DATA_BUS] rdata_tmp;
+
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin    
+           rdata_tmp <= `MEM_DATA_BUS_WIDTH'h0; 
+        end else if (mst_hready_i && ((state == READ) || (state == WAIT_READ)) && stall_i[5]) begin
+           rdata_tmp <=  mst_hrdata_i;
+        end
+    end
+
     reg    [`MEM_DATA_BUS] rdata_r;
 
     always @(*) begin
-        if (mst_hready_i && (state == READ) || (state == WAIT_READ)) begin
+        if (state == WAIT) begin
+            rdata_r = rdata_tmp;
+        end else if (mst_hready_i && ((state == READ) || (state == WAIT_READ))) begin
             rdata_r = mst_hrdata_i;
         end else begin
             rdata_r <= `MEM_DATA_BUS_WIDTH'h0;            

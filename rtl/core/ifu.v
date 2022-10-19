@@ -24,8 +24,6 @@ module ifu (
     reg ce_r;
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
-            ce_r <= 1'b0;
-        end else begin
             ce_r <= 1'b1;
         end
     end

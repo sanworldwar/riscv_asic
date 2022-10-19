@@ -193,7 +193,7 @@ module openrisc_sopc #(
     wire    [`HDATA_BUS]    slv_hrdata_o    [SLAVES];
 
     assign slv_addr_mask[0] = 32'hF0000000;
-    assign slv_addr_base[0] = 32'h10000000;
+    assign slv_addr_base[0] = 32'h00000000;
     assign sram_1_hsel_i = slv_hsel_i[0];
     assign sram_1_hwrite_i = slv_hwrite_i[0];
     assign sram_1_hready_i = slv_hready_i[0];
@@ -207,7 +207,7 @@ module openrisc_sopc #(
     assign slv_hrdata_o[0] = sram_1_hrdata_o;
 
     assign slv_addr_mask[1] = 32'hF0000000;
-    assign slv_addr_base[1] = 32'h00000000;
+    assign slv_addr_base[1] = 32'h10000000;
     assign sram_2_hsel_i = slv_hsel_i[1];
     assign sram_2_hwrite_i = slv_hwrite_i[1];
     assign sram_2_hready_i = slv_hready_i[1];

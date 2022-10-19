@@ -20,7 +20,7 @@ module div (
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
             div_shl <= 1'b0;
-        end else if (div_stop_o | div_cancel_i) begin
+        end else if (div_stop_o || div_cancel_i) begin
             div_shl <= 1'b0;
         end else if (div_start_i) begin
             div_shl <= 1'b1;
@@ -58,10 +58,10 @@ module div (
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
             count <= 6'b000000;
-        end else if (div_shl & !div_stop_o & !div_cancel_i) begin
+        end else if (div_shl && !div_stop_o && !div_cancel_i) begin
             count <= count + 1'b1;
         end else if (div_start_i) begin
-            if (|div_op2_i == 1'b0) begin
+            if ((|div_op2_i) == 1'b0) begin
                 count <= 6'b100000;
             end else begin
                 count <= 6'b000000;
@@ -81,7 +81,7 @@ module div (
     always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
             div_res_rem <= `DOUBLE_REG_BUS_WIDTH'h0;
-        end else if (div_shl & !div_stop_o & !div_cancel_i) begin
+        end else if (div_shl && !div_stop_o && !div_cancel_i) begin
             div_res_rem <= {sub_nxt, div_res_rem[`REG_BUS_WIDTH-2:0], !sub_res[`REG_BUS_WIDTH-1]};
         end else if (div_cancel_i) begin
             div_res_rem <= `DOUBLE_REG_BUS_WIDTH'h0;
@@ -94,11 +94,11 @@ module div (
         end
     end
 
-    assign div_res_o = ((div_op1_signed_r ^ div_op2_signed_r) & (|div_op2_i == 1'b1)) ? 
+    assign div_res_o = ((div_op1_signed_r ^ div_op2_signed_r) && (!(|div_op2_i == 1'b0))) ? 
         ~div_res_rem[`REG_BUS_WIDTH-1:0] + 1'b1 : div_res_rem[`REG_BUS_WIDTH-1:0];
-    assign div_rem_o = (div_op1_signed_r & (|div_op2_i == 1'b1)) ? 
+    assign div_rem_o = (div_op1_signed_r && (!(|div_op2_i == 1'b0))) ? 
         ~div_res_rem[`DOUBLE_REG_BUS_WIDTH-1:`REG_BUS_WIDTH] + 1'b1 : div_res_rem[`DOUBLE_REG_BUS_WIDTH-1:`REG_BUS_WIDTH];
 
-    assign div_stop_o = (count[5] == 1'b1) & div_shl;    
+    assign div_stop_o = (count[5] == 1'b1) && div_shl;    
 
 endmodule //div

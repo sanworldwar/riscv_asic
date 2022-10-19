@@ -5,17 +5,17 @@ module if_ahb_interface (
     input   wire    rst_n   ,
 
     //from ifu
-    input   wire                ce_i        ,    
-    input   wire    [`REG_BUS]  pc_i        ,
+    input   wire                    ce_i            ,    
+    input   wire    [`REG_BUS]      pc_i            ,
 
     //to idu
-    output  wire    [`REG_BUS]  pc_o        ,
-    output  wire    [31:0]      inst_o      ,
+    output  wire    [`REG_BUS]      pc_o            ,
+    output  wire    [31:0]          inst_o          ,
 
     //from ctrl
-    input   wire    [5:0]       stall_i     ,
-    input   wire    [4:0]       flush_i     ,
-    output  wire                stallreq_o  ,
+    input   wire    [5:0]           stall_i         ,
+    input   wire    [5:0]           flush_i         ,
+    output  wire                    stallreq_o      ,
 
     //to ahb bus
     output  wire                    mst_hsel_o      ,
@@ -52,33 +52,31 @@ module if_ahb_interface (
   //...... //bit2  
 
     //STATUS MACHINE PARAM
-    localparam IDLE = 2'b00;
-    localparam START = 2'b01;
-    localparam RUN = 2'b10;
-    localparam WAIT = 2'b11;
+    localparam IDLE = 3'b000;
+    localparam START = 3'b001;
+    localparam RUN = 3'b010;
+    localparam WAIT = 3'b011;
+    localparam JUMP = 3'b100;    
 
-    reg [1:0]   state, next_state;
+    reg [2:0]   state, next_state;
     always @(posedge clk or negedge rst_n) begin
-        if(!rst_n) begin
+        if (!rst_n) begin
             state <= IDLE;
         end else begin
             state <= next_state;
         end
     end
-    //复位开始，IDLE->START->RUN
-    //正常情况，RUN->RUN(包括mst_hready_i引起的停顿)
-    //普通停顿，RUN->WAIT(mst_hready_i有效后再转移状态，否则RUN->RUN)，数据暂存到inst_r
-    //jal， RUN->START->RUN
-    //excp， RUN->WAIT->START->RUN(mst_hready_i有效后再转移状态，否则RUN->START->RUN)，
-    //      即使跳转时mst_hready_i有效也不影响，stall_i[0]无效
-    //div-jal，jal将在div结束后跳转，div时，不会产生flush，RUN->WAIT->START->RUN
-    //div-irq，(div结果与irq同时发生或div结果慢irq一个时钟，div结果均能输出)，RUN->WAIT->START->RUN，
-    //         (mst_hready_i有效后再转移状态，否则RUN->START->RUN，若flush_i与mst_hready_i同时有效，stall_i必不有效) 
-    //div-ecall/ebreak，div时，ecall/ebreak不会进行，不会产生excp_jump_req，不会产生flush，RUN->WAIT->START->RUN，
-    //         (mst_hready_i有效后再转移状态，否则RUN->START->RUN，若flush_i与mst_hready_i同时有效，stall_i必不有效) 
-    //irq与jal同时，优先响应irq，irq发生时，jal不会使flush_i[0]有效，即使让flush_i[0]有效，WAIT时idu会被jal清零
-    //          但是如果mst_hready_i不有效，会提前进入状态START(虽然结果没影响)，RUN->WAIT->START->RUN
-    //         (mst_hready_i有效后再转移状态，否则RUN->START->RUN，若flush_i与mst_hready_i同时有效，stall_i必不有效)
+    //1、复位开始，IDLE->START->RUN
+    //2、正常情况，RUN->RUN(包括mst_hready_i引起的内部停顿)
+    //3、外部停顿，RUN->WAIT(mst_hready_i有效后再转移状态，无效则RUN->RUN)，数据暂存到inst_r
+    //4、jal， RUN->JUMP->RUN
+    //5、jal-外部停顿，RUN/WAIT->JUMP->WAIT->RUN
+    //6、excp， RUN->WAIT->JUMP->RUN
+    //7、div-jal = jal-外部停顿，div与jal有关时不会产生跳转请求
+    //8、div-irq，RUN->WAIT->JUMP->WAIT->RUN
+    //9、div-ecall/ebreak = 外部停顿, div时，ecall/ebreak不会进行
+    //10、irq与jal同时，RUN->JUMP->JUMP->WAIT->RUN
+
     always @(*) begin
         next_state = IDLE;
         case (state)
@@ -89,22 +87,37 @@ module if_ahb_interface (
                 next_state = RUN;
             end
             RUN: begin
-                if (stall_i[0] & mst_hready_i) begin //irq与jal同时，优先响应irq
-                    next_state = WAIT;
-                end else if (flush_i[0]) begin
-                    next_state = START;
+                if (flush_i[0]) begin
+                    next_state = JUMP;
+                end else if (stall_i[0]) begin
+                    if (mst_hready_i) begin
+                        next_state = WAIT;                        
+                    end else begin
+                        next_state = RUN;
+                    end
                 end else begin
                     next_state = RUN;
                 end
             end
             WAIT: begin
-                if (flush_i[0]) begin //针对excp，flush_i[0]与!stall_i[0]同时成立，跳转优先
-                    next_state = START;
-                end else if (!stall_i[0]) begin
-                    next_state = RUN;
+                if (flush_i[0]) begin
+                    next_state = JUMP;
                 end else begin
-                    next_state = WAIT;
+                    if (stall_i[0]) begin
+                        next_state = WAIT;
+                    end else begin
+                        next_state = RUN;
+                    end
                 end
+            end
+            JUMP: begin
+                if (flush_i[0]) begin
+                    next_state = JUMP;
+                end else if (stall_i[0]) begin
+                    next_state = WAIT;
+                end else begin
+                    next_state = RUN;
+                end              
             end
         endcase
     end
@@ -119,7 +132,8 @@ module if_ahb_interface (
     reg                 mst_hmastlock_r;
     reg [`REG_BUS]      pc_r;
     reg [31:0]          inst_r;
-    always @(posedge clk or negedge rst_n) begin
+
+   always @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
             mst_hsel_r <= 1'b0;
             mst_htrans_r <= HTRANS_IDLE;
@@ -127,19 +141,25 @@ module if_ahb_interface (
             mst_hwrite_r <= 1'b0;
             mst_hsize_r <= 3'b000;
             mst_hburst_r <= HBURSTS_SINGLE;
-            mst_hprot_r <= {3'b000, HPORT_OPCODE_FETCH};
+            mst_hprot_r <= 4'b0000;
             mst_hmastlock_r <= 1'b0;
-            pc_r <= `REG_BUS_WIDTH'h0;
-            inst_r <= 32'h0;
-        end
-        else begin
+        end else begin
             mst_hsel_r <= ce_i;
             mst_htrans_r <= HTRANS_NONSEQ;
             mst_hwrite_r <= 1'b0;
             mst_hsize_r <= 3'b010;
             mst_hburst_r <= HBURSTS_SINGLE;
             mst_hprot_r <= {3'b000, HPORT_OPCODE_FETCH};
-            mst_hmastlock_r <= 1'b1;
+            mst_hmastlock_r <= 1'b0;
+        end
+   end
+
+    always @(posedge clk or negedge rst_n) begin
+        if(!rst_n) begin
+            mst_haddr_r <= `HADDR_BUS_WIDTH'h0;
+            pc_r <= `REG_BUS_WIDTH'h0;
+            inst_r <= 32'h0;
+        end else begin
             case (state)
                 IDLE: begin
                     mst_haddr_r <= pc_i;
@@ -152,41 +172,75 @@ module if_ahb_interface (
                     inst_r <= 32'h0;
                 end
                 RUN: begin
-                    if (stall_i[0] & mst_hready_i) begin
-                        inst_r <= mst_hrdata_i;
-                    end else if (flush_i[0]) begin //跳转比hready优先级高
+                    if (flush_i[0]) begin
                         mst_haddr_r <= pc_i;
                         pc_r <= `REG_BUS_WIDTH'h0;
-                    end else if (mst_hready_i) begin
+                        inst_r <= 32'h0;
+                    end else if (stall_i[0]) begin
+                        mst_haddr_r <= mst_haddr_r;
+                        pc_r <= pc_r;
+                        if (mst_hready_i) begin
+                            inst_r <= mst_hrdata_i;
+                        end else begin
+                            inst_r <= 32'h0;
+                        end                       
+                    end else begin
                         mst_haddr_r <= pc_i;
                         pc_r <= mst_haddr_r;
+                        inst_r <= 32'h0;
                     end
                 end
                 WAIT: begin
-                    if (flush_i[0]) begin //跳转时内部寄存器清零
+                    if (flush_i[0]) begin
                         mst_haddr_r <= pc_i;
                         pc_r <= `REG_BUS_WIDTH'h0;
                         inst_r <= 32'h0;
-                    end else if (!stall_i[0]) begin
+                    end else begin
+                        if (stall_i[0]) begin
+                            mst_haddr_r <= mst_haddr_r;
+                            pc_r <= pc_r;
+                            inst_r <= inst_r;
+                        end else begin
+                            mst_haddr_r <= pc_i;
+                            pc_r <= mst_haddr_r;
+                            inst_r <= 32'h0;
+                        end
+                    end
+                end
+                JUMP: begin
+                    if (flush_i[0]) begin
+                        mst_haddr_r <= pc_i;
+                        pc_r <= `REG_BUS_WIDTH'h0;
+                        inst_r <= 32'h0;                        
+                    end else if (stall_i[0]) begin
+                        mst_haddr_r <= mst_haddr_r;
+                        pc_r <= `REG_BUS_WIDTH'h0;
+                        inst_r <= 32'h0; 
+                    end else begin
                         mst_haddr_r <= pc_i;
                         pc_r <= mst_haddr_r;
                         inst_r <= 32'h0;
                     end
-                end    
+                end
+                default: begin
+                    mst_haddr_r <= `HADDR_BUS_WIDTH'h0;
+                    pc_r <= `REG_BUS_WIDTH'h0;
+                    inst_r <= 32'h0;                    
+                end
             endcase                            
         end
     end
 
-    assign mst_hsel_o = ce_i; //mst_hsel_r，与地址对齐
-    assign mst_htrans_o = mst_htrans_r;
-    assign mst_haddr_o = mst_haddr_r;
+    assign mst_hsel_o = flush_i[0] ? 1'b0 : mst_hsel_r;
+    assign mst_htrans_o = flush_i[0] ? HTRANS_IDLE : mst_htrans_r;
+    assign mst_haddr_o = flush_i[0] ? `HADDR_BUS_WIDTH'h0 : mst_haddr_r;
     assign mst_hwdata_o = `HDATA_BUS_WIDTH'h0;
-    assign mst_hwrite_o = mst_hwrite_r;
-    assign mst_hsize_o = mst_hsize_r;
-    assign mst_hburst_o = mst_hburst_r;
-    assign mst_hprot_o = mst_hprot_r;
-    assign mst_hmastlock_o = mst_hmastlock_r;
-    assign mst_priority_o = 1'b1;
+    assign mst_hwrite_o = flush_i[0] ? 1'b0 : mst_hwrite_r;
+    assign mst_hsize_o = flush_i[0] ? 3'b000 : mst_hsize_r;
+    assign mst_hburst_o = flush_i[0] ? HBURSTS_SINGLE : mst_hburst_r;
+    assign mst_hprot_o = flush_i[0] ? 4'b0000 : mst_hprot_r;
+    assign mst_hmastlock_o = flush_i[0] ? 1'b0 : mst_hmastlock_r;
+    assign mst_priority_o = 1'b0;
 
     assign pc_o = pc_r;
     assign inst_o = ({`HDATA_BUS_WIDTH{(state == RUN) & mst_hready_i}} & mst_hrdata_i) |

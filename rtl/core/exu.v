@@ -2,57 +2,57 @@
 
 module exu (
     //from idu
-    input   wire    [`REG_BUS]      pc_i            ,
-    input   wire    [`REG_BUS]      op1_data_i      ,
-    input   wire    [`REG_BUS]      op2_data_i      ,
-    input   wire    [`REG_BUS]      imm_data_i      ,
-    input   wire    [`REG_ADDR_BUS] rd_addr_i       ,
-    input   wire                    rd_we_i         ,
-    input   wire    [`DEC_INFO_BUS] dec_info_bus_i  ,
-    input   wire    [`CSR_ADDR_BUS] csr_waddr_i     ,
-    input   wire                    csr_we_i        ,
+    input   wire    [`REG_BUS]      pc_i                ,
+    input   wire    [`REG_BUS]      op1_data_i          ,
+    input   wire    [`REG_BUS]      op2_data_i          ,
+    input   wire    [`REG_BUS]      imm_data_i          ,
+    input   wire    [`REG_ADDR_BUS] rd_addr_i           ,
+    input   wire                    rd_we_i             ,
+    input   wire    [`DEC_INFO_BUS] dec_info_bus_i      ,
+    input   wire    [`CSR_ADDR_BUS] csr_waddr_i         ,
+    input   wire                    csr_we_i            ,
 
 
 
     //to lsu, to idu
-    output  wire                    rd_we_o         ,
-    output  wire    [`REG_BUS]      rd_mem_data_o   ,
-    output  wire    [`REG_ADDR_BUS] rd_addr_o       ,
-    output  wire                    csr_we_o        ,
-    output  wire    [`REG_BUS]      csr_wdata_o     ,
-    output  wire    [`CSR_ADDR_BUS] csr_waddr_o     ,
+    output  wire                    rd_we_o             ,
+    output  wire    [`REG_BUS]      rd_mem_data_o       ,
+    output  wire    [`REG_ADDR_BUS] rd_addr_o           ,
+    output  wire                    csr_we_o            ,
+    output  wire    [`REG_BUS]      csr_wdata_o         ,
+    output  wire    [`CSR_ADDR_BUS] csr_waddr_o         ,
 
 
     //to lsu
-    output  wire    [`MEM_ADDR_BUS] mem_addr_o      ,
-    output  wire    [`EXE_INFO_BUS] exe_info_bus_o  ,
+    output  wire    [`MEM_ADDR_BUS] mem_addr_o          ,
+    output  wire    [`EXE_INFO_BUS] exe_info_bus_o      ,
 
     //to ctrl
-    output  wire                stallreq_o          ,
+    output  wire                    stallreq_o          ,
 
     //from excp
-    input   wire                mul_div_cancel_i    ,              
+    input   wire                    mul_div_cancel_i    ,              
 
     //to mul(mul_start_o also to excp)
-    output  wire                mul_start_o         ,
-    output  wire                mul_cancel_o        ,
-    output  wire                mul_signed_o        ,
-    output  wire    [`REG_BUS]  mul_op1_o           , //被乘数
-    output  wire    [`REG_BUS]  mul_op2_o           , //乘数
-    input   wire                mul_stop_i          ,
-    input   wire    [`REG_BUS]  mul_res_l_i         ,
-    input   wire    [`REG_BUS]  mul_res_h_i         ,
+    output  wire                    mul_start_o         ,
+    output  wire                    mul_cancel_o        ,
+    output  wire                    mul_signed_o        ,
+    output  wire    [`REG_BUS]      mul_op1_o           , //被乘数
+    output  wire    [`REG_BUS]      mul_op2_o           , //乘数
+    input   wire                    mul_stop_i          ,
+    input   wire    [`REG_BUS]      mul_res_l_i         ,
+    input   wire    [`REG_BUS]      mul_res_h_i         ,
 
     //to div(div_start_o also to excp)
-    output  wire                div_start_o         ,
-    output  wire                div_cancel_o        ,
-    output  wire                div_op1_signed_o    , //被除数符号位信号
-    output  wire                div_op2_signed_o    , //除数符号位信号     
-    output  wire    [`REG_BUS]  div_op1_o           , //被除数
-    output  wire    [`REG_BUS]  div_op2_o           , //除数
-    input   wire                div_stop_i          ,
-    input   wire    [`REG_BUS]  div_res_i           ,
-    input   wire    [`REG_BUS]  div_rem_i    
+    output  wire                    div_start_o         ,
+    output  wire                    div_cancel_o        ,
+    output  wire                    div_op1_signed_o    , //被除数符号位信号
+    output  wire                    div_op2_signed_o    , //除数符号位信号     
+    output  wire    [`REG_BUS]      div_op1_o           , //被除数
+    output  wire    [`REG_BUS]      div_op2_o           , //除数
+    input   wire                    div_stop_i          ,
+    input   wire    [`REG_BUS]      div_res_i           ,
+    input   wire    [`REG_BUS]      div_rem_i    
 );
     //R instruction
     wire    inst_r_op = dec_info_bus_i[`DEC_INST_OP] == `DEC_INST_R;
@@ -228,7 +228,7 @@ module exu (
         {`EXE_INFO_BUS_WIDTH{inst_l_op}} & {{`EXE_INFO_BUS_WIDTH-`EXE_L_INFO_BUS_WIDTH{1'b0}}, exe_l_info_bus} |
         {`EXE_INFO_BUS_WIDTH{inst_s_op}} & {{`EXE_INFO_BUS_WIDTH-`EXE_S_INFO_BUS_WIDTH{1'b0}}, exe_s_info_bus};
     
-    assign  stallreq_o = (mul_start_o & !mul_stop_i)  | (div_start_o & !div_stop_i);
+    assign  stallreq_o = ((mul_start_o & !mul_stop_i)  | (div_start_o & !div_stop_i)) & !mul_div_cancel_i;
 
 
 
