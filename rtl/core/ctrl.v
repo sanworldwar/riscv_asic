@@ -28,10 +28,12 @@ module ctrl (
                      ex_stallreq_i     ? 6'b001111 :
                      id_stallreq_i     ? 6'b000111 : //id_ex清零
                      excp_stallreq_i   ? 6'b000111 : //id_ex清零
-                     if_ahb_stallreq_i ? 6'b000011 : 6'b000000;  //if_ex清零
+                     if_ahb_stallreq_i ? 6'b000011 : 6'b000000;  //if_id清零
 
-    assign flush_o = ({5{excp_flushreq_i[1]}} & 5'b001111) | //if_ahb, if_id, id_ex, ex_ls, ls_ahb清零
-                     ({5{excp_flushreq_i[0]}} & 5'b000111) | //if_ahb， if_id, id_ex清零
-                     ({5{id_jump_req_i}} & 5'b000011); //跳转时清除if_id输出
+    assign flush_o = ({5{excp_flushreq_i[1]}} & 6'b001111) | //if_ahb, if_id, id_ex, ex_ls, ls_ahb清零
+                     ({5{excp_flushreq_i[0]}} & 6'b000111) | //if_ahb， if_id, id_ex清零
+                     ((excp_stallreq_i | ex_stallreq_i | ls_ahb_stallreq_i) ?
+                      {5{id_jump_req_i}} & 6'b000001  : //jal需要写回，excp_flushreq_i比id_jump_req_i优先级高
+                      {5{id_jump_req_i}} & 6'b000011 ); //跳转时清除if_id输出
 
 endmodule  //ctrl

@@ -42,8 +42,12 @@ module ahb_uart #(
     localparam WRITE = 3'b011;
     localparam WAIT_WRITE = 3'b100;
 
+    // 50MHz时钟，波特率115200bps(bit/s)对应的分频系数 8 1 1 1
+    localparam BAUD_115200 = 32'h1B2;
+
     localparam UART_DATA = 4'h0;
     localparam UART_CTRL = 4'h4;
+    localparam UART_BAUD = 4'h8;    
 
     reg                 hwrite_r    ;
     reg [2:0]           hsize_r     ;
@@ -75,9 +79,13 @@ module ahb_uart #(
         end
     end
 
+    // addr: 0x04
+    // rw. bit[0]: rx enable, 1 = enable, 0 = disable
+    // rw. bit[1]: tx enable, 1 = enable, 0 = disable
     reg [7:0]   uart_ctrl;
-    reg [1:0]   clk_cnt;
-    reg         clk_tx;
+    // addr: 0x08
+    // rw. clk div
+    reg [31:0]  uart_baud;
 
     //rfifo
     wire [7:0]  rf_wdata;
@@ -95,23 +103,6 @@ module ahb_uart #(
     wire        wf_full;
     wire        wf_empty;
 
-    always @(posedge hclk or negedge hresetn) begin
-        if (hresetn == 1'b0) begin
-            clk_cnt <= 2'b0;
-        end else if (clk_cnt == 2'b11) begin
-            clk_cnt <= 2'b0;
-        end else begin
-            clk_cnt <= clk_cnt + 2'b1;
-        end
-    end
-
-    always @(posedge hclk or negedge hresetn) begin
-        if (hresetn == 1'b0) begin
-            clk_tx <= 1'b1;
-        end else if (clk_cnt == 2'b11) begin
-            clk_tx <= ~clk_tx;
-        end
-    end
 
     reg [2:0]   state, next_state;
 
@@ -207,9 +198,11 @@ module ahb_uart #(
         end else if (uart_reg_read && (state == PREPARE)) begin
             case (haddr_r[3:0])
                 UART_CTRL: begin
-                    hrdata_r = uart_ctrl;
+                    hrdata_r = {{DWIDTH-8{1'b0}},uart_ctrl};
                 end
-                //.....
+                UART_BAUD: begin
+                    hrdata_r = uart_baud;
+                end
                 default: begin
                     hrdata_r = {DWIDTH{1'b0}};
                 end
@@ -226,12 +219,15 @@ module ahb_uart #(
     always @(posedge hclk or negedge hresetn) begin
         if (hresetn == 1'b0) begin
             uart_ctrl <= 8'h0;
+            uart_baud <= BAUD_115200;
         end else if (uart_reg_write) begin
             case (haddr_r[3:0])
                 UART_CTRL: begin
                     uart_ctrl <= hwdata_i[7:0];
                 end
-                //.....
+                UART_BAUD: begin
+                    uart_baud <= hwdata_i;
+                end
                 default: begin
 
                 end
@@ -239,12 +235,22 @@ module ahb_uart #(
         end
     end    
 
+    wire rx_en = uart_ctrl[0];
+    wire tx_en = uart_ctrl[1];
+
+    wire    [31:0]  baud = uart_baud;
+
+    wire            clk_tx;
+
+
     uart_rx u_uart_rx (
         .clk (hclk),
         .rst_n (hresetn),
+        .rx_en(rx_en),
         .data_o (rf_wdata),
         .full_i(rf_full),
         .we_o (rf_we),
+        .baud(baud),
         .rx (rx)
     );
 
@@ -264,11 +270,14 @@ module ahb_uart #(
     );
 
     uart_tx u_uart_tx (
-        .clk (clk_tx),
+        .clk (hclk),
+        .clk_tx(clk_tx),
         .rst_n (hresetn),
+        .tx_en(tx_en),
         .data_i (wf_rdata),
         .empty_i (wf_empty),
         .re_o (wf_re),
+        .baud(baud),
         .tx (tx)
     ); 
 

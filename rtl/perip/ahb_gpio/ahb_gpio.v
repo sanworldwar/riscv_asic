@@ -36,11 +36,10 @@ module ahb_gpio #(
     localparam PREPARE = 2'b01;
     localparam READ = 2'b10;
 
-
-    // GPIO控制寄存器
-    localparam GPIO_CTRL = 4'h0;
     // GPIO数据寄存器
-    localparam GPIO_DATA = 4'h4;
+    localparam GPIO_DATA = 4'h0;
+    // GPIO控制寄存器
+    localparam GPIO_CTRL = 4'h4;
 
     reg                 hwrite_r    ;
     reg [2:0]           hsize_r     ;

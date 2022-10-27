@@ -2,12 +2,15 @@
 
 module uart_tx (
     input   wire            clk     ,
+    output  wire            clk_tx  ,
     input   wire            rst_n   ,
+    input   wire            tx_en   ,
     input   wire    [7:0]   data_i  ,
 
     input   wire            empty_i ,    
     output  wire            re_o    ,
 
+    input   wire    [31:0]  baud    ,
     output  wire            tx      
 );
     localparam idle = 3'b000;
@@ -16,6 +19,29 @@ module uart_tx (
     localparam starting = 3'b011;    
     localparam sending = 3'b100;
     localparam endsend = 3'b101;
+
+    reg [15:0]   clk_cnt;
+    reg          clk_tx_r;
+
+    always @(posedge clk or negedge rst_n) begin
+        if (rst_n == 1'b0) begin
+            clk_cnt <= 16'h0;
+        end else if (clk_cnt == ((baud >> 1) - 1)) begin
+            clk_cnt <= 16'h0;
+        end else begin
+            clk_cnt <= clk_cnt + 1'b1;
+        end
+    end
+
+    always @(posedge clk or negedge rst_n) begin
+        if (rst_n == 1'b0) begin
+            clk_tx_r <= 1'b1;
+        end else if (clk_cnt == ((baud >> 1) - 1)) begin
+            clk_tx_r <= ~clk_tx_r;
+        end
+    end
+
+    assign clk_tx = clk_tx_r;
 
     reg         re_r;
     reg         re_valid;   
@@ -30,7 +56,7 @@ module uart_tx (
 
     assign re_o = re_r;
 
-    always @(posedge clk or negedge rst_n) begin
+    always @(posedge clk_tx or negedge rst_n) begin
         if (!rst_n) begin
             state <= idle;
         end else begin
@@ -47,7 +73,7 @@ module uart_tx (
         end_flag = 1'b0;
         case (state)
             idle : begin
-                if (!empty_i) begin
+                if (!empty_i && tx_en) begin
                     re_r = 1'b1;
                     next_state = prepare;
                 end else begin
@@ -82,7 +108,7 @@ module uart_tx (
 
 
 
-    always @(posedge clk or negedge rst_n) begin
+    always @(posedge clk_tx or negedge rst_n) begin
         if (!rst_n) begin
             uart_shift_tx <= 9'h1ff;
         end else if (re_valid) begin
@@ -98,7 +124,7 @@ module uart_tx (
         end
     end
 
-    always @(posedge clk or negedge rst_n) begin
+    always @(posedge clk_tx or negedge rst_n) begin
         if (!rst_n) begin
             uart_cnt <= 3'd0;
         end else if (shift) begin
@@ -108,7 +134,7 @@ module uart_tx (
         end
     end
 
-    always @(posedge clk or negedge rst_n) begin
+    always @(posedge clk_tx or negedge rst_n) begin
         if (!rst_n) begin
             uart_parity <= 1'd1;
         end else if (shift && uart_shift_tx[1]) begin

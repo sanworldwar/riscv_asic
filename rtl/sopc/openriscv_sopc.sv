@@ -67,7 +67,7 @@ module openrisc_sopc #(
     wire			        sram_2_hready_i     ;
     wire    [2:0]  	        sram_2_hsize_i      ;
     wire    [2:0]  	        sram_2_hburst_i     ;
-    wire    [2:0]  	        sram_2_htrans_i     ;
+    wire    [1:0]  	        sram_2_htrans_i     ;
     wire    [`HDATA_BUS] 	sram_2_hwdata_i     ;
     wire    [`HADDR_BUS] 	sram_2_haddr_i      ;	
     
@@ -81,7 +81,7 @@ module openrisc_sopc #(
     wire			        uart_hready_i       ;
     wire    [2:0]  	        uart_hsize_i        ;
     wire    [2:0]  	        uart_hburst_i       ;
-    wire    [2:0]  	        uart_htrans_i       ;
+    wire    [1:0]  	        uart_htrans_i       ;
     wire    [`HDATA_BUS] 	uart_hwdata_i       ;
     wire    [`HADDR_BUS] 	uart_haddr_i        ;
     
@@ -95,7 +95,7 @@ module openrisc_sopc #(
     wire			        spi_hready_i        ;
     wire    [2:0]  	        spi_hsize_i         ;
     wire    [2:0]  	        spi_hburst_i        ;
-    wire    [2:0]  	        spi_htrans_i        ;
+    wire    [1:0]  	        spi_htrans_i        ;
     wire    [`HDATA_BUS] 	spi_hwdata_i        ;
     wire    [`HADDR_BUS] 	spi_haddr_i         ;
     
@@ -109,7 +109,7 @@ module openrisc_sopc #(
     wire			        timer_hready_i      ;
     wire    [2:0]  	        timer_hsize_i       ;
     wire    [2:0]  	        timer_hburst_i      ;
-    wire    [2:0]  	        timer_htrans_i      ;
+    wire    [1:0]  	        timer_htrans_i      ;
     wire    [`HDATA_BUS] 	timer_hwdata_i      ;
     wire    [`HADDR_BUS] 	timer_haddr_i       ;
     
@@ -125,7 +125,7 @@ module openrisc_sopc #(
     wire			        gpio_hready_i       ;
     wire    [2:0]  	        gpio_hsize_i        ;
     wire    [2:0]  	        gpio_hburst_i       ;
-    wire    [2:0]  	        gpio_htrans_i       ;
+    wire    [1:0]  	        gpio_htrans_i       ;
     wire    [`HDATA_BUS] 	gpio_hwdata_i       ;
     wire    [`HADDR_BUS] 	gpio_haddr_i        ;	
     

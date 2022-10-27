@@ -70,7 +70,7 @@ module if_ahb_interface (
     //2、正常情况，RUN->RUN(包括mst_hready_i引起的内部停顿)
     //3、外部停顿，RUN->WAIT(mst_hready_i有效后再转移状态，无效则RUN->RUN)，数据暂存到inst_r
     //4、jal， RUN->JUMP->RUN
-    //5、jal-外部停顿，RUN/WAIT->JUMP->WAIT->RUN
+    //5、jal-外部停顿，RUN/WAIT->JUMP(->JUMP)->WAIT->RUN，b_inst不需要写回，j_inst需要写回
     //6、excp， RUN->WAIT->JUMP->RUN
     //7、div-jal = jal-外部停顿，div与jal有关时不会产生跳转请求
     //8、div-irq，RUN->WAIT->JUMP->WAIT->RUN

@@ -38,6 +38,10 @@ module excp(
     input   wire                    ls_ahb_stallreq_i 
 );
 
+    localparam M_TIMER = `REG_BUS_WIDTH'h80000007;
+    localparam M_ECALL = `REG_BUS_WIDTH'h0000000B;
+    localparam BREAK = `REG_BUS_WIDTH'h00000003;
+
     localparam IDLE = 3'b000;
     localparam MEPC = 3'b001;
     localparam MEPC_EXCP = 3'b010;
@@ -107,14 +111,14 @@ module excp(
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            cause <= `CSR_ADDR_BUS_WIDTH'h0;
+            cause <= `REG_BUS_WIDTH'h0;
         end else begin
             if (timer_irq_en) begin
-                cause <= `CSR_ADDR_BUS_WIDTH'b1000_0000_0111;
+                cause <= M_TIMER;
             end else if (inst_sys_ecall) begin
-                cause <= `CSR_ADDR_BUS_WIDTH'b0000_0000_1011;
+                cause <= M_ECALL;
             end else if (inst_sys_ebreak) begin
-                cause <= `CSR_ADDR_BUS_WIDTH'b0000_0000_0011;                   
+                cause <= BREAK;                   
             end
         end
     end
@@ -177,12 +181,14 @@ module excp(
                 MEPC_EXCP: begin
                     csr_we_r <= 1'b1;
                     csr_waddr_r <= `CSR_MEPC;                    
-                    if (ls_ahb_stallreq_i) begin
-                        if (pc_zero) begin
+                    if (ls_ahb_stallreq_i) begin  //ex = inst_s or inst_l
+                        if (pc_zero) begin        //id = inst_bj
                             csr_wdata_r <= pc_tmp - `REG_BUS_WIDTH'h4;
                         end else begin
                             csr_wdata_r <= pc_i - `REG_BUS_WIDTH'h4;
                         end
+                    end else begin
+                        csr_wdata_r <= csr_wdata_r;
                     end
                 end
                 MSTATUS: begin

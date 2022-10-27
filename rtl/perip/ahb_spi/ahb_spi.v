@@ -101,7 +101,7 @@ module ahb_spi #(
     wire spi_reg_read = spi_cs && !hwrite_r && !(haddr_r[3:0] == SPI_DATA);
     wire spi_reg_write = spi_cs && hwrite_r && !(haddr_r[3:0] == SPI_DATA);
 
-    reg [7:0]  spi_ctrl; //[0]:en [1]:CPOL, [2]:CPHA, [4:3]:SS, [7:5]:div
+    reg [7:0]  spi_ctrl; //[0]:en [1]:CPOL, [2]:CPHA, [4:3]:NSS, [7:5]:div
     wire [3:0] spi_div = spi_ctrl[7:5];
     wire en = spi_ctrl[0];
     wire CPOL = spi_ctrl[1];

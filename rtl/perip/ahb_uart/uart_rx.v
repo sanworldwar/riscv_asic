@@ -3,11 +3,13 @@
 module uart_rx (
     input   wire            clk         ,
     input   wire            rst_n       ,
+    input   wire            rx_en       ,
     output  wire    [7:0]   data_o      ,
 
     input   wire            full_i      ,
     output  wire            we_o        ,
 
+    input   wire    [31:0]  baud        ,
     input   wire            rx
 );
 
@@ -18,10 +20,10 @@ module uart_rx (
 
     reg [7:0]   data_r, data_temp;
     reg [1:0]   state, next_state;
-    reg         count_3, count_8;
+    reg         count_baud_2, count_baud;
     reg         end_flag;
-    reg [1:0]   uart_count_3;
-    reg [2:0]   uart_count_8;
+    reg [15:0]  uart_count_baud_2;
+    reg [31:0]  uart_count_baud;
     reg [3:0]   uart_count_bit;
     reg [7:0]   uart_shift_rx;
     reg         uart_parity;
@@ -41,21 +43,21 @@ module uart_rx (
 
     always @(*) begin
         next_state = idle;
-        count_3 = 1'b0;
-        count_8 = 1'b0;
+        count_baud_2 = 1'b0;
+        count_baud = 1'b0;
         end_flag = 1'b0;
         case (state)
             idle : begin
-                if (!rx && !full_i) begin
+                if (!rx && !full_i && rx_en) begin
                     next_state = starting;
-                    count_3 = 1'b1;                   
+                    count_baud_2 = 1'b1;                   
                 end else begin
                     next_state = idle;
                 end
             end 
             starting : begin
-                count_3 = 1'b1; 
-                if (uart_count_3 == 2'd3) begin
+                count_baud_2 = 1'b1; 
+                if (uart_count_baud_2 == ((baud >> 1) - 1)) begin
                     next_state = receving;
                 end else if (!rx) begin
                     next_state = starting;
@@ -64,8 +66,8 @@ module uart_rx (
                 end             
             end   
             receving : begin
-                count_8 = 1'b1;
-                if ((uart_count_bit[3] == 1'b1) && (uart_count_8 == 3'd7)) begin
+                count_baud = 1'b1;
+                if ((uart_count_bit[3] == 1'b1) && (uart_count_baud == (baud - 1))) begin
                     next_state = endrece;
                     end_flag = 1'b1;
                 end else begin
@@ -73,11 +75,11 @@ module uart_rx (
                 end
             end 
             endrece : begin
-                count_8 = 1'b1;
+                count_baud = 1'b1;
                 end_flag = 1'b1;
-                if (uart_count_8 == 3'd7) begin
+                if (uart_count_baud == (baud - 1)) begin
                     next_state = idle;
-                    count_8 = 1'b0;
+                    count_baud = 1'b0;
                 end else begin
                     next_state = endrece;
                 end
@@ -87,50 +89,58 @@ module uart_rx (
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            uart_count_3 <= 2'd0;
-        end else if (count_3 && !rx) begin
-            uart_count_3 <= uart_count_3 + 2'd1;
+            uart_count_baud_2 <= 16'h0;
+        end else if (count_baud_2 && !rx) begin
+            if (uart_count_baud_2 == ((baud >> 1) - 1)) begin
+                uart_count_baud_2 <= 16'h0;
+            end else begin
+                uart_count_baud_2 <= uart_count_baud_2 + 1'b1;
+            end
         end else begin
-            uart_count_3 <= 2'd0;
+            uart_count_baud_2 <= 16'h0;
         end
     end
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            uart_count_8 <= 3'd0;
-        end else if (count_8) begin
-            uart_count_8 <= uart_count_8 + 3'd1;
+            uart_count_baud <= 32'h0;
+        end else if (count_baud) begin
+            if (uart_count_baud == (baud - 1)) begin
+                uart_count_baud <= 32'h0;
+            end else begin
+                uart_count_baud <= uart_count_baud + 1'b1;
+            end
         end else begin
-            uart_count_8 <= 3'd0;
+            uart_count_baud <= 32'h0;
         end
     end
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            uart_count_bit <= 4'd0;
-        end else if ((uart_count_8 == 3'd7) && !end_flag) begin
-            uart_count_bit <= uart_count_bit + 4'd1;
-        end else if ((uart_count_8 == 3'd7) && end_flag) begin
-            uart_count_bit <= 4'd0;
+            uart_count_bit <= 4'h0;
+        end else if ((uart_count_baud == (baud - 1)) && !end_flag) begin
+            uart_count_bit <= uart_count_bit + 1'b1;
+        end else if ((uart_count_baud == (baud - 1)) && end_flag) begin
+            uart_count_bit <= 4'h0;
         end
     end
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            uart_shift_rx <= 8'd0;
-        end else if ((uart_count_8 == 3'd7) && !end_flag) begin
+            uart_shift_rx <= 8'h0;
+        end else if ((uart_count_baud == (baud - 1)) && !end_flag) begin
             uart_shift_rx <= {rx,uart_shift_rx[7:1]};
-        end else if ((uart_count_8 == 3'd7) && end_flag) begin
-            uart_shift_rx <= 8'd0;
+        end else if ((uart_count_baud == (baud - 1)) && end_flag) begin
+            uart_shift_rx <= 8'h0;
         end
     end
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             uart_parity <= 1'b1;
-        end else if ((uart_count_8 == 3'd7) && rx && !end_flag) begin
+        end else if ((uart_count_baud == (baud - 1)) && rx && !end_flag) begin
             uart_parity <= ~uart_parity;
-        end else if ((uart_count_8 == 3'd7) && end_flag) begin
+        end else if ((uart_count_baud == (baud - 1)) && end_flag) begin
             uart_parity <= 1'b1;
         end
     end
@@ -138,19 +148,19 @@ module uart_rx (
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             rece_correct <= 1'b0;
-        end else if (!count_8) begin
+        end else if (!count_baud) begin
             rece_correct <= 1'b0;
-        end else if ((uart_count_8 == 3'd7) && end_flag) begin
+        end else if ((uart_count_baud == (baud - 1)) && end_flag) begin
             rece_correct <= (rx == uart_parity) ? 1'b1 : 1'b0;
         end
     end
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            data_temp <= 8'd0;
-        end else if (!count_8) begin
-            data_temp <= 8'd0;
-        end else if ((uart_count_8 == 3'd7) && end_flag) begin
+            data_temp <= 8'h0;
+        end else if (!count_baud) begin
+            data_temp <= 8'h0;
+        end else if ((uart_count_baud == (baud - 1)) && end_flag) begin
             data_temp <= uart_shift_rx;
         end
     end
@@ -158,7 +168,7 @@ module uart_rx (
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             we_r <= 1'b0;
-        end else if ((uart_count_8 == 3'd0) && rece_correct) begin
+        end else if ((uart_count_baud == 32'h0) && rece_correct) begin
             we_r <= 1'b1;
         end else begin
             we_r <= 1'b0;
@@ -167,11 +177,11 @@ module uart_rx (
 
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            data_r <= 8'd0;
-        end else if ((uart_count_8 == 3'd0) && rece_correct) begin
+            data_r <= 8'h0;
+        end else if ((uart_count_baud == 32'h0) && rece_correct) begin
             data_r <= data_temp;
         end else begin
-            data_r <= 8'd0;
+            data_r <= 8'h0;
         end
     end
 

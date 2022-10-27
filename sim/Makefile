@@ -18,6 +18,7 @@ CM_DIR = -cm_dir ./${OUTPUT}.vdb
 
 ELAB = vcs \
 	  -timescale=1ns/1ps -sverilog -nc +v2k -kdb ${ALL_DEFINE} -f filelist.f \
+	  +define+SIMULATION \
 	  ${CM} \
 	  ${CM_NAME} \
 	  ${CM_DIR} \

@@ -24,7 +24,7 @@ module openriscv_sopc_tb ();
     wire    [1:0]           pin_io      ;
 
     always #10 clk = ~clk;
-
+    
     //c_sim
     initial begin
         $readmemh("./c_sim/inst1.data", u_openrisc_sopc.u1_ahb_sram.bank0[0].u_sram_8kx8.mem);
@@ -57,7 +57,6 @@ module openriscv_sopc_tb ();
         clk = 1'b0;
         rst_n = 1'b0;
         #100 rst_n = 1'b1;
-        #97000 $finish; //simple 97000
     end
 
     openrisc_sopc #(
@@ -92,29 +91,29 @@ module openriscv_sopc_tb ();
 
     initial begin
         rx = 1'b1;
-        #80 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b1;
+        #2250 rx <= 1'b0;
+        #8680 rx <= 1'b1;
+        #8680 rx <= 1'b0;
+        #8680 rx <= 1'b1;
+        #8680 rx <= 1'b0;
+        #8680 rx <= 1'b1;
+        #8680 rx <= 1'b0;
+        #8680 rx <= 1'b1;
+        #8680 rx <= 1'b0;
+        #8680 rx <= 1'b1;
+        #8680 rx <= 1'b1;
         
-        #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
-        #160 rx <= 1'b0;
-        #160 rx <= 1'b0;
-        #160 rx <= 1'b1;
+        #8680 rx <= 1'b0;
+        #8680 rx <= 1'b1;
+        #8680 rx <= 1'b1;
+        #8680 rx <= 1'b1;
+        #8680 rx <= 1'b0;
+        #8680 rx <= 1'b1;
+        #8680 rx <= 1'b0;
+        #8680 rx <= 1'b1;
+        #8680 rx <= 1'b0;
+        #8680 rx <= 1'b0;
+        #8680 rx <= 1'b1;
     end
 
     initial begin
@@ -126,4 +125,53 @@ module openriscv_sopc_tb ();
             end
     end
 
+    reg pin_1;
+    initial begin
+        pin_1 <= 1'b0;
+        #5000
+            repeat (8) begin
+                pin_1 <= ~pin_1;
+                #2000;
+            end        
+    end
+
+    assign pin_io[1] = pin_1;
+    
+    // sim timeout
+    initial begin
+        #1000000
+        $display("Time Out.");
+        $finish;
+    end
+
+    wire    [`REG_BUS]  x26 = u_openrisc_sopc.u_openriscv.u_regfile.gpr_regs[26];
+    wire    [`REG_BUS]  x27 = u_openrisc_sopc.u_openriscv.u_regfile.gpr_regs[27];
+
+    initial begin
+        `ifdef SIMULATION
+            wait(x26 == 32'h1);   // wait sim end, when x26 == 1
+            #100
+            if (x27 == 32'h1) begin
+                $display("~~~~~~~~~~~~~~~~~~~ TEST_PASS ~~~~~~~~~~~~~~~~~~~");
+                $display("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+                $display("~~~~~~~~~ #####     ##     ####    #### ~~~~~~~~~");
+                $display("~~~~~~~~~ #    #   #  #   #       #     ~~~~~~~~~");
+                $display("~~~~~~~~~ #    #  #    #   ####    #### ~~~~~~~~~");
+                $display("~~~~~~~~~ #####   ######       #       #~~~~~~~~~");
+                $display("~~~~~~~~~ #       #    #  #    #  #    #~~~~~~~~~");
+                $display("~~~~~~~~~ #       #    #   ####    #### ~~~~~~~~~");
+                $display("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+            end else begin
+                $display("~~~~~~~~~~~~~~~~~~~ TEST_FAIL ~~~~~~~~~~~~~~~~~~~~");
+                $display("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+                $display("~~~~~~~~~~######    ##       #    #     ~~~~~~~~~~");
+                $display("~~~~~~~~~~#        #  #      #    #     ~~~~~~~~~~");
+                $display("~~~~~~~~~~#####   #    #     #    #     ~~~~~~~~~~");
+                $display("~~~~~~~~~~#       ######     #    #     ~~~~~~~~~~");
+                $display("~~~~~~~~~~#       #    #     #    #     ~~~~~~~~~~");
+                $display("~~~~~~~~~~#       #    #     #    ######~~~~~~~~~~");
+                $display("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+            end
+        `endif
+    end
 endmodule
