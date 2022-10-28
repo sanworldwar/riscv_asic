@@ -1,0 +1,9 @@
+# Object files
+*.o
+*.ko
+*.obj
+simple.data
+simple.bin
+simple.dump
+simple.elf
+simple

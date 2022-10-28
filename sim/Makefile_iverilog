@@ -1,0 +1,43 @@
+ifndef CROSS_COMPILE
+CROSS_COMPILE = ../tools/riscv_toolchain/bin/riscv32-unknown-linux-gnu-
+endif
+
+CC = $(CROSS_COMPILE)as
+LD = $(CROSS_COMPILE)ld
+OBJCOPY = $(CROSS_COMPILE)objcopy
+OBJDUMP = $(CROSS_COMPILE)objdump
+
+OBJECTS = ./data/inst_rom.o
+
+CFLAG = -march=rv32im -mabi=ilp32
+
+export CROSS_COMPILE
+
+all:  ./data/inst_rom.data ./data/inst_rom.objdump
+
+%.o: %.S
+	$(CC) $(CFLAG) $< -o $@
+
+./data/inst_rom.om: ram.ld $(OBJECTS)
+	$(LD) -T ram.ld $(OBJECTS) -o $@
+
+./data/inst_rom.bin: ./data/inst_rom.om
+	$(OBJCOPY) -O binary $< $@
+
+./data/inst_rom.data: ./data/inst_rom.bin
+	python ./data/bin2data.py $<
+
+./data/inst_rom.objdump: $(OBJECTS)
+	$(OBJDUMP) -d $< > $@
+
+sim:
+	iverilog -g2012 -I ../rtl/core -s openriscv_sopc_tb -o out.vvp ../rtl/core/*.v ../rtl/interconnect/*.sv ../rtl/perip/ahb_sram/*.v ../rtl/sopc/*.sv ./*.v
+	vvp out.vvp 
+	gtkwave openriscv_sopc_tb.vcd 
+
+
+.PHONY: clean
+
+clean:
+	rm -f ./data/*.o ./data/*.om ./data/*.bin ./data/inst*.data
+

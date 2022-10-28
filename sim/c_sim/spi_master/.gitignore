@@ -1,0 +1,9 @@
+# Object files
+*.o
+*.ko
+*.obj
+spi_master.data
+spi_master.elf
+spi_master.bin
+spi_master.dump
+spi_master

@@ -1,0 +1,9 @@
+# Object files
+*.o
+*.ko
+*.obj
+timer_int.data
+timer_int.elf
+timer_int.bin
+timer_int.dump
+timer_int
