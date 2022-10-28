@@ -1,12 +1,2 @@
 tools/riscv_toolchain/
-sim/
-!sim/openriscv_sopc_tb.v
-!sim/Makefile
-!rtl/core/*.v
-!rtl/perip/ahb_sram/*.v
-!rtl/perip/ahb_uart/*.v
-!rtl/perip/ahb_spi/*.v
-!rtl/perip/ahb_timer/*.v
-!rtl/perip/ahb_gpio/*.v
-!sim/asm_sim/
-!sim/c_sim/
+
