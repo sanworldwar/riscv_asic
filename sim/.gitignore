@@ -1,0 +1,7 @@
+*.o
+*.om
+*.data
+*.bin
+*.objdump
+*.gtkw
+
