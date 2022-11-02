@@ -58,5 +58,4 @@ print-%  : ; @echo $* = $($*)
  
 clean:
 	rm -rf ./csrc DVEfiles simv* *.vpd *.key *.log *.vpd novas* *.fsdb verdiLog \
-	cm_report*
-	find ./work -type f -exec rm -f {} \;
+	vfastLog cm_report*
