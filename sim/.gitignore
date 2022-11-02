@@ -5,6 +5,7 @@
 !asm_sim/
 !c_sim/
 !filelist.f
+!signal_riscv.rc
 *.log
 novas.*
 *.fsdb
@@ -14,6 +15,5 @@ csrc
 isa_sim
 verdiLog
 vfastLog
-*.gtkw
 *.rc
 ucli.key
