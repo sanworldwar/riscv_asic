@@ -91,7 +91,7 @@ module openriscv_sopc_tb ();
 
     initial begin
         rx = 1'b1;
-        #2250 rx <= 1'b0;
+        #4430 rx <= 1'b0;
         #8680 rx <= 1'b1;
         #8680 rx <= 1'b0;
         #8680 rx <= 1'b1;

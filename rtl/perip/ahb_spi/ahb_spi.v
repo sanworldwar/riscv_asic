@@ -86,7 +86,7 @@ module ahb_spi #(
     wire        rf_empty;
     //wfifo
     wire [7:0]  wf_wdata;
-    reg         wf_we;
+    wire        wf_we;
     reg         wf_re;
 
     wire [7:0]  wf_rdata;

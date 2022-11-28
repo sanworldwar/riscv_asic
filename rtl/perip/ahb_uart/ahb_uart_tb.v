@@ -50,9 +50,10 @@ module ahb_uart_tb ();
         hsize_i <= 3'b010;
         hburst_i <= 3'b000; //SINGLE
         htrans_i <= 2'b10; //NONSEQ 
-        haddr_i <= 32'h0;       
-
+        haddr_i <= 32'h4;
+        hwdata_i <= {24'd0,8'b00000011};
         #20
+        haddr_i <= 32'h0;
         hwdata_i <= {24'd0,8'b00100111}; //流水线，.v IDLE -> PREPARE
         #20
         hwdata_i <= {24'd0,8'b01101011};
@@ -68,7 +69,7 @@ module ahb_uart_tb ();
         hsel_i <= 1'b0;      
     end
 
-    initial begin
+    initial begin  //波特率分频比为8
         rx = 1'b1;
         #80 rx <= 1'b0;
         #160 rx <= 1'b1;

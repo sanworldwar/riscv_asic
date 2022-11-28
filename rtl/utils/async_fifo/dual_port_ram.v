@@ -3,7 +3,6 @@ module dual_port_ram #(
     parameter DWIDTH = 8
 )(
     input   wire    rclk                            ,
-    input   wire    ren_i                           ,
     input   wire    [$clog2(DEPTH)-1:0]     raddr_i ,
     output  wire    [DWIDTH-1:0]            rdata_o ,
 
@@ -20,15 +19,8 @@ module dual_port_ram #(
             mem[waddr_i] <= wdata_i;
         end;
     end
+  
 
-    reg [DWIDTH-1:0]    rdata_r;    
-
-    always @(posedge rclk) begin
-        if (ren_i) begin
-            rdata_r <= mem[raddr_i];
-        end;
-    end
-
-    assign rdata_o = rdata_r;
+    assign rdata_o = mem[raddr_i];
     
 endmodule //moduleName

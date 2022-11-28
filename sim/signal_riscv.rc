@@ -2,7 +2,7 @@ Magic 271485
 Revision Verdi_O-2018.09-SP2
 
 ; Window Layout <x> <y> <width> <height> <signalwidth> <valuewidth>
-viewPort 0 27 1846 794 292 65
+viewPort 0 27 1846 797 292 65
 
 ; File list:
 ; openDirFile [-d delimiter] [-s time_offset] [-rf auto_bus_rule_file] path_name file_name
@@ -15,17 +15,19 @@ openDirFile -d / "" "/home/fxr/Project/riscv_asic/sim/openriscv_sopc_tb.fsdb" "/
 signalSpacing 5
 
 ; windowTimeUnit is used for zoom, cursor & marker
+windowTimeUnit 1ns
+
 ; waveform viewport range
-zoom 0.000000 206037939.600000
-cursor 0.000000
+zoom 1513.656738 2490.209473 1n
+cursor 2450.000000
 marker 0.000000
 
 ; user define markers
 ; userMarker time_pos marker_name color linestyle
 ; visible top row signal index
-top 0
+top 137
 ; marker line index
-markerPos 166
+markerPos 159
 
 ; event list
 ; addEvent event_name event_expression
@@ -214,11 +216,14 @@ addSignal -h 15 -holdScope hsel_i
 addSignal -h 15 -holdScope hwdata_i[31:0]
 addSignal -h 15 -holdScope hwrite_i
 addSignal -h 15 -holdScope rx
-addSignal -h 15 -holdScope state[2:0]
 addSignal -h 15 -holdScope tx
+addSignal -h 15 /openriscv_sopc_tb/u_openrisc_sopc/u_ahb_uart/u_uart_tx/clk_tx
+addSignal -h 15 -holdScope data_i[7:0]
+addSignal -h 15 /openriscv_sopc_tb/u_openrisc_sopc/u_ahb_uart/u_uart_rx/data_o[7:0]
+addSignal -h 15 /openriscv_sopc_tb/u_openrisc_sopc/u_ahb_uart/state[1:0]
 addGroup "spi"
 addSignal -h 15 /openriscv_sopc_tb/u_openrisc_sopc/u_ahb_spi/hrdata_o[31:0]
-addSignal -h 15 -holdScope hready_i
+addSignal -h 15 -holdScope hreadyout_o
 addSignal -h 15 -holdScope hsel_i
 addSignal -h 15 -holdScope hsize_i[2:0]
 addSignal -h 15 -holdScope hwdata_i[31:0]
@@ -237,6 +242,8 @@ getSignalForm close
 
 "/openriscv_sopc_tb"
 "/openriscv_sopc_tb/u_openrisc_sopc"
+"/openriscv_sopc_tb/u_openrisc_sopc/u_ahb_uart"
+"/openriscv_sopc_tb/u_openrisc_sopc/u_ahb_uart/u_uart_tx"
 "/openriscv_sopc_tb/u_openrisc_sopc/u_openriscv"
 "/openriscv_sopc_tb/u_openrisc_sopc/u_openriscv/u_lsu"
 
@@ -252,6 +259,8 @@ SCOPE_LIST_BEGIN
 "/openriscv_sopc_tb/u_openrisc_sopc/u2_ahb_sram"
 "/openriscv_sopc_tb/u_openrisc_sopc/u_ahb_uart"
 "/openriscv_sopc_tb/u_openrisc_sopc/u_ahb_spi"
+"/openriscv_sopc_tb/u_openrisc_sopc/u_ahb_uart/u_uart_tx"
+"/openriscv_sopc_tb/u_openrisc_sopc/u_ahb_uart/u_uart_rx"
 SCOPE_LIST_END
 
 GETSIGNALFORM_SCOPE_HIERARCHY_END

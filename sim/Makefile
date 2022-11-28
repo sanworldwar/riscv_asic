@@ -57,5 +57,5 @@ print-%  : ; @echo $* = $($*)
  
  
 clean:
-	rm -rf ./csrc DVEfiles simv* *.vpd *.key *.log *.vpd novas* *.fsdb verdiLog \
+	rm -rf csrc DVEfiles simv* *.vpd *.key *.log *.vpd novas* *.fsdb verdiLog \
 	vfastLog cm_report*

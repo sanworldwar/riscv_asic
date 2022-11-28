@@ -1,3 +1,4 @@
+//wclk freq > rclk freq
 module async_fifo #(
     parameter DEPTH = 32,
     parameter DWIDTH = 8
@@ -40,7 +41,6 @@ module async_fifo #(
     )
     u_dual_port_ram (
         .rclk(rclk),
-        .ren_i(ren),
         .raddr_i(raddr),
         .rdata_o(rdata_o),
         .wclk(wclk),

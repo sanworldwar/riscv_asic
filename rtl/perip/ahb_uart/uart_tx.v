@@ -15,10 +15,9 @@ module uart_tx (
 );
     localparam idle = 3'b000;
     localparam prepare = 3'b001;
-    localparam ready = 3'b010;
-    localparam starting = 3'b011;    
-    localparam sending = 3'b100;
-    localparam endsend = 3'b101;
+    localparam starting = 3'b010;    
+    localparam sending = 3'b011;
+    localparam endsend = 3'b100;
 
     reg [15:0]   clk_cnt;
     reg          clk_tx_r;
@@ -79,11 +78,8 @@ module uart_tx (
                 end else begin
                     next_state = idle;
                 end
-            end
-            prepare : begin  //因为读使能ren会打一拍
-                next_state = ready;                
-            end            
-            ready : begin    //因为异步fifo读会打一拍
+            end           
+            prepare : begin    //因为读使能ren会打一拍
                 re_valid = 1'b1;
                 next_state = starting;                
             end

@@ -36,11 +36,10 @@ module ahb_uart #(
     //localparam HBURSTS_WRAP4 = 3'b010;
     //...... 
 
-    localparam IDLE = 3'b000;
-    localparam PREPARE = 3'b001;
-    localparam WAIT_READ = 3'b010;
-    localparam WRITE = 3'b011;
-    localparam WAIT_WRITE = 3'b100;
+    localparam IDLE = 2'b00;
+    localparam PREPARE = 2'b01;
+    localparam WAIT_READ = 2'b10;
+    localparam WAIT_WRITE = 2'b11;
 
     // 50MHz时钟，波特率115200bps(bit/s)对应的分频系数 8 1 1 1
     localparam BAUD_115200 = 32'h1B2;
@@ -104,7 +103,7 @@ module ahb_uart #(
     wire        wf_empty;
 
 
-    reg [2:0]   state, next_state;
+    reg [1:0]   state, next_state;
 
     wire uart_cs = hsel_i && (hburst_r == HBURSTS_SINGLE) && (htrans_r == HTRANS_NONSEQ);
     wire uart_read = uart_cs && !hwrite_r && (haddr_r[3:0] == UART_DATA); //!(|haddr_r[3:0])
@@ -139,7 +138,7 @@ module ahb_uart #(
                     end
                 end else if (uart_write) begin
                     if (!wf_full) begin
-                        next_state = WRITE;
+                        next_state = PREPARE;
                     end else begin
                         next_state = WAIT_WRITE;
                     end
@@ -160,13 +159,10 @@ module ahb_uart #(
                     end                
                 end           
             end
-            WRITE : begin
-                next_state = PREPARE; //PREPARE
-            end
             WAIT_WRITE : begin   
                 if (uart_write) begin
                     if (!wf_full) begin
-                        next_state = WRITE;
+                        next_state = PREPARE;
                     end else begin
                         next_state = WAIT_WRITE;
                     end                
