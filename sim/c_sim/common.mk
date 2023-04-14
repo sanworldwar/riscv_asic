@@ -20,6 +20,8 @@ C_SRCS += $(COMMON_DIR)/trap_handler.c
 C_SRCS += $(COMMON_DIR)/lib/utils.c
 C_SRCS += $(COMMON_DIR)/lib/uart.c
 C_SRCS += $(COMMON_DIR)/lib/spi.c
+#C_SRCS += $(COMMON_DIR)/lib/xprintf.c
+
 
 LINKER_SCRIPT := $(COMMON_DIR)/link.lds
 

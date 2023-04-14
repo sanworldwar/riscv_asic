@@ -166,7 +166,7 @@ module excp(
                     end else if (inst_sys_mret & !ex_stallreq_i) begin
                         csr_we_r <= 1'b1;
                         csr_waddr_r <= `CSR_MSTATUS;
-                        csr_wdata_r <= {csr_mstatus_i[31:8], 1'b1, csr_mstatus_i[6:4], csr_mstatus_i[3], csr_mstatus_i[2:0]};
+                        csr_wdata_r <= {csr_mstatus_i[31:8], 1'b1, csr_mstatus_i[6:4], csr_mstatus_i[7], csr_mstatus_i[2:0]};
                     end else begin
                         csr_we_r <= 1'b0;
                         csr_waddr_r <= `CSR_ADDR_BUS_WIDTH'h0;

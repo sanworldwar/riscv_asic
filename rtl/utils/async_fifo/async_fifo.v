@@ -101,7 +101,7 @@ module async_fifo #(
 
     generate
         genvar i;
-        for (i=0; i<=$clog2(DEPTH); i=i+1) begin
+        for (i=0; i<=$clog2(DEPTH); i=i+1) begin : async_long_to_short
             async_long_to_short u_async_long_to_short(
                 .clk(wclk),
                 .rst_n(rst_n),
@@ -113,7 +113,7 @@ module async_fifo #(
 
     generate
         genvar j;
-        for (j=0; j<=$clog2(DEPTH); j=j+1) begin
+        for (j=0; j<=$clog2(DEPTH); j=j+1) begin : async_short_to_long
             async_short_to_long u_async_short_to_long(
                 .clk(rclk),
                 .rst_n(rst_n),

@@ -131,7 +131,7 @@ module ahb_spi #(
             PREPARE : begin
                 if (spi_read) begin
                     if (!rf_empty) begin
-                        next_state = PREPARE; //PREPARE   hready_i=1时会无效读，lsu此时地址未备好，下同
+                        next_state = PREPARE; //PREPARE   hready_i=1时会无效读，lsu此时地址未备好，hsel_i至少拉低一周期，下同
                     end else begin
                         next_state = WAIT_READ;
                     end

@@ -37,10 +37,12 @@ def divide_4_data(data_filename):
     #print("type(read_data)==bytes is",isinstance(read_data, bytes))
     read_data_str = str(read_data,'utf-8')
     #print("type(read_data_str)==str is",isinstance(read_data_str, str))
-    data_1_filename = "../inst1.data"
-    data_2_filename = "../inst2.data"
-    data_3_filename = "../inst3.data"
-    data_4_filename = "../inst4.data"
+    path = os.path.dirname(__file__)
+    print(path)
+    data_1_filename = path + "/inst1.data"
+    data_2_filename = path + "/inst2.data"
+    data_3_filename = path + "/inst3.data"
+    data_4_filename = path + "/inst4.data"
   
     f1_data = open(data_1_filename, "w")
     f2_data = open(data_2_filename, "w")

@@ -107,7 +107,7 @@ module ahb_gpio #(
            PREPARE : begin
                 if (hsel_i) begin
                     if (gpio_read) begin
-                        next_state = PREPARE; //PREPARE   hready_i=1时会无效读，lsu此时地址未备好，下同
+                        next_state = PREPARE; //PREPARE   hready_i=1时会无效读，lsu此时地址未备好，hsel_i至少拉低一周期，下同
                     end else if (gpio_write) begin 
                         next_state = PREPARE; //PREPARE
                     end else begin
@@ -126,10 +126,11 @@ module ahb_gpio #(
 
     generate
         genvar i;
-        for (i=0; i<2; i=i+1) begin
+        for (i=0; i<2; i=i+1) begin : gpio
             assign pin_io[i] = gpio_en[i] ? gpio_data[i] : 1'bz;
         end
     endgenerate
+
 
     // 写寄存器
     always @(posedge hclk or negedge hresetn) begin

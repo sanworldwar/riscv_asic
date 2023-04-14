@@ -94,7 +94,7 @@ module ahb_sram #(
             end
            PREPARE : begin
                 if (sram_read) begin
-                    next_state = PREPARE; //PREPARE   hready_i=1时会无效读，lsu此时地址未备好，但ifu地址会备好，下同
+                    next_state = PREPARE; //PREPARE   hready_i=1时会无效读，lsu此时地址未备好，hsel_i至少拉低一周期，但ifu地址会备好，下同
                 end else if (sram_write) begin 
                     next_state = PREPARE; //PREPARE 
                 end else begin
