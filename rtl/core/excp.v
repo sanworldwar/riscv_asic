@@ -86,9 +86,9 @@ module excp(
                     end else begin
                         sys_nxstate = MEPC_EXCP;                        
                     end
-                end else if ((inst_sys_ecall | inst_sys_ebreak) & !ex_stallreq_i) begin
+                end else if ((inst_sys_ecall | inst_sys_ebreak) & !(ex_stallreq_i | ls_ahb_stallreq_i)) begin
                     sys_nxstate = MEPC;
-                end else if ((inst_sys_mret) & !ex_stallreq_i) begin
+                end else if ((inst_sys_mret) & !(ex_stallreq_i | ls_ahb_stallreq_i)) begin
                     sys_nxstate = MRET;
                 end
             end
@@ -159,11 +159,11 @@ module excp(
                                 csr_wdata_r <= pc_i;
                             end                             
                         end                                     
-                    end else if ((inst_sys_ecall | inst_sys_ebreak) & !ex_stallreq_i) begin
+                    end else if ((inst_sys_ecall | inst_sys_ebreak) & !(ex_stallreq_i | ls_ahb_stallreq_i)) begin
                         csr_we_r <= 1'b1;
                         csr_waddr_r <= `CSR_MEPC; 
                         csr_wdata_r <= pc_i+`REG_BUS_WIDTH'h4;                   
-                    end else if (inst_sys_mret & !ex_stallreq_i) begin
+                    end else if (inst_sys_mret & !(ex_stallreq_i | ls_ahb_stallreq_i)) begin
                         csr_we_r <= 1'b1;
                         csr_waddr_r <= `CSR_MSTATUS;
                         csr_wdata_r <= {csr_mstatus_i[31:8], 1'b1, csr_mstatus_i[6:4], csr_mstatus_i[7], csr_mstatus_i[2:0]};
@@ -182,7 +182,7 @@ module excp(
                     csr_we_r <= 1'b1;
                     csr_waddr_r <= `CSR_MEPC;                    
                     if (ls_ahb_stallreq_i) begin  //ex = inst_s or inst_l
-                        if (pc_zero) begin        //id = inst_bj
+                        if (pc_zero) begin        //id = inst_bj 不存在
                             csr_wdata_r <= pc_tmp - `REG_BUS_WIDTH'h4;
                         end else begin
                             csr_wdata_r <= pc_i - `REG_BUS_WIDTH'h4;
@@ -212,7 +212,7 @@ module excp(
         end else if (sys_state == IDLE) begin
             if (timer_irq_en) begin                     
                 excp_type <= `EXCP_ASYNC_ASSERT;                                               
-            end else if ((inst_sys_ecall | inst_sys_ebreak | inst_sys_mret) & !ex_stallreq_i) begin
+            end else if ((inst_sys_ecall | inst_sys_ebreak | inst_sys_mret) & !(ex_stallreq_i | ls_ahb_stallreq_i)) begin
                 excp_type <= `EXCP_SYNC_ASSERT;
             end else begin
                 excp_type <= 2'b00;
@@ -230,10 +230,10 @@ module excp(
             jump_req_r <= 1'b0;
             jump_pc_r <= `REG_BUS_WIDTH'h0;
         end else if (sys_state == IDLE) begin
-            if (timer_irq_en | ((inst_sys_ecall | inst_sys_ebreak) & !ex_stallreq_i)) begin
+            if (timer_irq_en | ((inst_sys_ecall | inst_sys_ebreak) & !(ex_stallreq_i | ls_ahb_stallreq_i))) begin
                 jump_req_r <= 1'b1;
                 jump_pc_r <= csr_mtvec_i;                        
-            end else if (((inst_sys_mret) & !ex_stallreq_i)) begin
+            end else if (((inst_sys_mret) & !(ex_stallreq_i | ls_ahb_stallreq_i))) begin
                 jump_req_r <= 1'b1;
                 jump_pc_r <= csr_mepc_i;
             end else begin

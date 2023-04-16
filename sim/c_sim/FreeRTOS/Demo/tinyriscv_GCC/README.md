@@ -1,3 +1,0 @@
-# riscv_asic
-
-vPortSetupTimerInterrupt的TIMER0_REG(TIMER0_VALUE)设置太小会触发xTaskCheckForTimeOut导致程序重启

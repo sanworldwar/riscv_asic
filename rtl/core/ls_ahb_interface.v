@@ -280,7 +280,7 @@ module ls_ahb_interface (
                             mst_hburst_r <= HBURSTS_SINGLE;
                             mst_hprot_r <= {3'b000, HPORT_OPCODE_FETCH};
                             mst_hmastlock_r <= 1'b0;
-                            mst_priority_r <= 1'b1; ;                               
+                            mst_priority_r <= 1'b1;                             
                         end
                     end else if (we_i && mst_hready_i) begin
                         mst_hsel_r <= 1'b1;

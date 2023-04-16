@@ -133,7 +133,7 @@ volatile uint32_t ulHartId;
 #endif
 
 #ifdef SIMULATION
-    TIMER0_REG(TIMER0_VALUE) = 0XFFFF;
+    TIMER0_REG(TIMER0_VALUE) = 500;
 #else
     TIMER0_REG(TIMER0_VALUE) = uxTimerIncrementsForOneTick;
 #endif
