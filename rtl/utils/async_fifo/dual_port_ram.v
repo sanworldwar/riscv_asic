@@ -17,7 +17,7 @@ module dual_port_ram #(
     always @(posedge wclk) begin
         if (wen_i) begin
             mem[waddr_i] <= wdata_i;
-        end;
+        end
     end
   
 

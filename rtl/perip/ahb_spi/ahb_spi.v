@@ -274,7 +274,7 @@ module ahb_spi #(
 
     always @(posedge hclk or negedge hresetn) begin
         if (hresetn == 1'b0) begin
-            spi_clk <= CPOL;
+            spi_clk <= 1'b0;
         end else begin
             if (start && !done) begin
                 if (spi_count == spi_div-4'd1) begin

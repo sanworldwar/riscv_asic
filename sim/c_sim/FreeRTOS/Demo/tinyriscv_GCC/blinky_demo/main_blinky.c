@@ -79,7 +79,7 @@
 /* The rate at which data is sent to the queue.  The 200ms value is converted
 to ticks using the pdMS_TO_TICKS() macro. */
 #ifdef SIMULATION
-#define mainQUEUE_SEND_FREQUENCY_MS			pdMS_TO_TICKS( 20 )
+#define mainQUEUE_SEND_FREQUENCY_MS			pdMS_TO_TICKS( 1000 )
 #else
 #define mainQUEUE_SEND_FREQUENCY_MS			pdMS_TO_TICKS( 1000 )
 #endif

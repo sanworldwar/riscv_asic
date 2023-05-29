@@ -9,6 +9,7 @@ TARGET = freertos
 # RTL仿真时打开这行注释
 CFLAGS += -DSIMULATION
 CFLAGS += -Os
+CFLAGS      += -D__riscv_xlen=32
 ASM_SRCS := ../../Source/portable/RISC-V/portASM.S
 #LDFLAGS +=
 INCLUDES += -I. -I../../Source/portable/RISC-V -I../../Source/include -I../../../

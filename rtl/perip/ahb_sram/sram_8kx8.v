@@ -28,19 +28,21 @@ module sram_8kx8 #(
         end
     end
 
-    reg [DWIDTH-1:0]    data_r;
-    always @(*) begin
-        if (!cen_i) begin
-            if (!wen_i) begin
-                data_r = data_i;   
-            end else begin
-                data_r = mem[addr_i];
-            end
-        end
-    end
-    assign data_o = data_r;
+//    reg [DWIDTH-1:0]    data_r;
+//    always @(*) begin
+//        if (!cen_i) begin
+//            if (!wen_i) begin
+//                data_r = data_i;   
+//            end else begin
+//                data_r = mem[addr_i];
+//            end
+//        end
+//    end
+//    assign data_o = data_r;
 
 //  assign data_o = !cen_i ? (!wen_i ? data_i : mem[addr_i]) : data_o;
 //  若addr_i先到，cen_i后到，则会输出新数据，而不是保持原有数据。
+
+  assign data_o = !cen_i ? (!wen_i ? data_i : mem[addr_i]) : {DWIDTH{1'b0}};
 
 endmodule  //sram_8kx8

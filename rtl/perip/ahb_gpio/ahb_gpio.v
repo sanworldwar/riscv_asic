@@ -78,7 +78,7 @@ module ahb_gpio #(
     reg [DWIDTH-1:0]    gpio_data;
 
 
-    reg [1:0]   gpio_en;    
+    wire [1:0]   gpio_en;    
 
     reg [1:0]   state, next_state;
 
@@ -159,22 +159,29 @@ module ahb_gpio #(
         end
     end
 
-    always @(posedge hclk or negedge hresetn) begin
-        if (!hresetn) begin
-            gpio_en = 2'b00;
-        end else begin
-            if (gpio_ctrl[1:0] == 2'b01) begin
-                gpio_en[0] <= 1'b1;
-            end else begin
-                gpio_en[0] <= 1'b0;
-            end
-            if (gpio_ctrl[3:2] == 2'b01) begin
-                gpio_en[1] <= 1'b1;
-            end else begin
-                gpio_en[1] <= 1'b0;
-            end
+//    always @(posedge hclk or negedge hresetn) begin
+//        if (!hresetn) begin
+//            gpio_en = 2'b00;
+//        end else begin
+//            if (gpio_ctrl[1:0] == 2'b01) begin
+//                gpio_en[0] <= 1'b1;
+//            end else begin
+//                gpio_en[0] <= 1'b0;
+//            end
+//            if (gpio_ctrl[3:2] == 2'b01) begin
+//                gpio_en[1] <= 1'b1;
+//            end else begin
+//                gpio_en[1] <= 1'b0;
+//            end
+//        end
+//    end
+
+    generate
+        genvar j;
+        for (j=0; j<2; j=j+1) begin : gpio_en_data
+            assign gpio_en[j] = gpio_ctrl[j*2 +: 2] == 2'b01;
         end
-    end
+    endgenerate
 
     reg [DWIDTH-1:0]    hrdata_r;
 

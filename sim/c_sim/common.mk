@@ -43,6 +43,7 @@ CFLAGS += -mcmodel=$(RISCV_MCMODEL) -ffunction-sections -fdata-sections -fno-bui
 
 $(TARGET): $(LINK_OBJS) $(LINK_DEPS) Makefile
 	$(RISCV_GCC) $(CFLAGS) $(INCLUDES) $(LINK_OBJS) -o $@.elf $(LDFLAGS)
+	$(RISCV_GCC) $(CFLAGS) $(INCLUDES) $(LINK_OBJS) -o $@ $(LDFLAGS)
 	$(RISCV_OBJCOPY) -O binary $@.elf $@.bin
 	$(RISCV_OBJDUMP) --disassemble-all $@.elf > $@.dump
 	python $(COMMON_DIR)/bin2divide_data.py $@.bin

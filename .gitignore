@@ -1,2 +1,4 @@
 tools/riscv_toolchain/
+tools/pk/
+tools/spike/
 

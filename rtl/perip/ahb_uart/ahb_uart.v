@@ -186,7 +186,7 @@ module ahb_uart #(
 
     reg    [DWIDTH-1:0]    hrdata_r;
 
-    assign rf_re = uart_read && !rf_empty && ((state == PREPARE) || (state == WAIT_READ));;
+    assign rf_re = uart_read && !rf_empty && ((state == PREPARE) || (state == WAIT_READ));
 
     always @(*) begin
         if (rf_re) begin

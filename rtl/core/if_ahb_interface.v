@@ -137,7 +137,6 @@ module if_ahb_interface (
         if(!rst_n) begin
             mst_hsel_r <= 1'b0;
             mst_htrans_r <= HTRANS_IDLE;
-            mst_haddr_r <= `HADDR_BUS_WIDTH'h0;
             mst_hwrite_r <= 1'b0;
             mst_hsize_r <= 3'b000;
             mst_hburst_r <= HBURSTS_SINGLE;

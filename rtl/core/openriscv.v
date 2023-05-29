@@ -149,7 +149,7 @@ module openriscv (
 
     //连接lsu和ls_ahb_interface的信号
     wire    [`MEM_DATA_BUS] ls_mem_rdata_i  ;
-    wire                    ls_mem_re_o     ;             ;
+    wire                    ls_mem_re_o     ;            
     wire    [`MEM_DATA_BUS] ls_mem_wdata_o  ;
     wire                    ls_mem_we_o     ;
     wire    [`MEM_ADDR_BUS] ls_mem_addr_o   ;  
